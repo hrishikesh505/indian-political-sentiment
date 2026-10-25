@@ -1,0 +1,67 @@
+{
+  "model": "Fine-tuned Cardiff RoBERTa (Multi-task)",
+  "training_samples": 1688,
+  "test_samples": 200,
+  "sentiment_accuracy": 80.0,
+  "sarcasm_f1": 0.348,
+  "frozen_layers": 8,
+  "epochs_trained": 8,
+  "training_history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.3587,
+      "val_loss": 1.1287,
+      "sent_acc": 0.79,
+      "sarc_f1": 0.2308
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.0949,
+      "val_loss": 1.0381,
+      "sent_acc": 0.8,
+      "sarc_f1": 0.2727
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.9386,
+      "val_loss": 0.9568,
+      "sent_acc": 0.8,
+      "sarc_f1": 0.3478
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.7935,
+      "val_loss": 1.1074,
+      "sent_acc": 0.83,
+      "sarc_f1": 0.3478
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.7415,
+      "val_loss": 0.9993,
+      "sent_acc": 0.785,
+      "sarc_f1": 0.3284
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.612,
+      "val_loss": 1.0961,
+      "sent_acc": 0.755,
+      "sarc_f1": 0.339
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.5412,
+      "val_loss": 1.21,
+      "sent_acc": 0.855,
+      "sarc_f1": 0.3404
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.4792,
+      "val_loss": 1.2292,
+      "sent_acc": 0.82,
+      "sarc_f1": 0.3478
+    }
+  ]
+}

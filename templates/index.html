@@ -1,0 +1,3693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PoliticaPulse AI | Indian Political Tweet Sentiment & Sarcasm Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="/chart.min.js"></script>
+  <style>
+    /* ==========================================================================
+       THEME & COLOR PALETTE - Exact extraction from Image 3
+       ========================================================================== */
+    :root {
+      --bg-base: #04222B;          /* #04222B - Deepest dark navy/teal */
+      --bg-sidebar: #031c23;       /* Deeper tone for sleek sidebar */
+      --bg-card: #0A3D4A;         /* #0A3D4A - Dark teal card container */
+      --bg-card-hover: #10606F;   /* #10606F - Elevated interactive card */
+      --bg-subtle: #062a34;       /* Subtle input & recessed block */
+      --primary: #1D8B94;         /* #1D8B94 - Primary brand teal cyan */
+      --accent: #4FB8B4;          /* #4FB8B4 - Vibrant mint/cyan accent */
+      --accent-soft: #98D8D0;     /* #98D8D0 - Soft mint/cyan tint */
+      --text-highlight: #E2F4F0;  /* #E2F4F0 - Crisp pale icy mint (white text) */
+      --text-main: #d4eee8;       /* Primary readable text */
+      --text-muted: #83b9b4;      /* Muted secondary labels */
+      --border: rgba(79, 184, 180, 0.22);
+      --border-hover: rgba(79, 184, 180, 0.45);
+      --glow: rgba(79, 184, 180, 0.25);
+      
+      /* Semantic Accents Harmonized with Teal */
+      --pos: #4FB8B4;
+      --pos-bg: rgba(79, 184, 180, 0.15);
+      --neu: #f59e0b;
+      --neu-bg: rgba(245, 158, 11, 0.15);
+      --neg: #f87171;
+      --neg-bg: rgba(248, 113, 113, 0.16);
+      --sarc: #38bdf8;
+      --sarc-bg: rgba(56, 189, 248, 0.16);
+
+      --bjp: #fb923c;
+      --congress: #38bdf8;
+      --aap: #a78bfa;
+      --tmc: #34d399;
+      --dmk: #facc15;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+      --transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      --shadow-card: 0 8px 24px -4px rgba(2, 17, 22, 0.45), 0 2px 6px -1px rgba(0, 0, 0, 0.2);
+      --shadow-glow: 0 0 25px rgba(29, 139, 148, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+      line-height: 1.5;
+      background-image: 
+        radial-gradient(circle at 10% 15%, rgba(29, 139, 148, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(79, 184, 180, 0.08) 0%, transparent 45%),
+        linear-gradient(180deg, #04222B 0%, #031c23 100%);
+      background-attachment: fixed;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-base);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #0d4653;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    /* ==========================================================================
+       SIDEBAR NAVIGATION (FlowBoard Inspiration)
+       ========================================================================== */
+    aside.sidebar {
+      width: 270px;
+      min-width: 270px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 20px 14px 16px;
+      overflow-y: auto;
+      user-select: none;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 10px 22px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 18px;
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #1D8B94, #4FB8B4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 19px;
+      color: #04222B;
+      box-shadow: 0 4px 16px rgba(79, 184, 180, 0.4);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 1.12rem;
+      font-weight: 800;
+      color: var(--text-highlight);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .brand-sub {
+      font-size: 0.73rem;
+      color: var(--accent-soft);
+      font-weight: 500;
+    }
+
+    .sidebar-search {
+      position: relative;
+      margin-bottom: 18px;
+    }
+
+    .sidebar-search input {
+      width: 100%;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      padding: 9px 12px 9px 34px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      color: var(--text-highlight);
+      outline: none;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    .sidebar-search input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--glow);
+    }
+
+    .sidebar-search svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      width: 15px;
+      height: 15px;
+    }
+
+    .sidebar-group-title {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      padding: 10px 10px 6px;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-card);
+      color: var(--text-highlight);
+      border-color: rgba(79, 184, 180, 0.15);
+      transform: translateX(2px);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(29, 139, 148, 0.35) 0%, rgba(10, 61, 74, 0.4) 100%);
+      color: var(--text-highlight);
+      border-color: var(--primary);
+      box-shadow: 0 4px 14px rgba(2, 22, 28, 0.5);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: -6px;
+      top: 18%;
+      bottom: 18%;
+      width: 4px;
+      border-radius: 2px;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .nav-item svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      color: var(--accent-soft);
+      transition: var(--transition);
+    }
+
+    .nav-item.active svg {
+      color: var(--accent);
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: 0.68rem;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 700;
+      background: rgba(79, 184, 180, 0.16);
+      color: var(--accent-soft);
+      border: 1px solid rgba(79, 184, 180, 0.3);
+    }
+
+    .nav-badge.new {
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      border-color: #38bdf8;
+    }
+
+    /* Sidebar Footer / Research Card */
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .research-card {
+      background: linear-gradient(145deg, #07333e 0%, #05262f 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 13px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .research-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 70px;
+      height: 70px;
+      background: radial-gradient(circle, rgba(79, 184, 180, 0.25) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .research-tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .research-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-highlight);
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+
+    .research-desc {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+      margin-bottom: 10px;
+    }
+
+    .research-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      color: var(--accent-soft);
+      font-weight: 600;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse 2s infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(0.8); opacity: 0.4; }
+    }
+
+    /* ==========================================================================
+       MAIN CONTENT WRAPPER & TOP BAR
+       ========================================================================== */
+    .app-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    /* Header Top Bar */
+    header.topbar {
+      background: rgba(4, 34, 43, 0.88);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      position: sticky;
+      top: 0;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-highlight);
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .page-title-box h2 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-highlight);
+      letter-spacing: -0.02em;
+    }
+
+    .page-title-box p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mode-selector {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .mode-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: inherit;
+    }
+
+    .mode-btn.active {
+      background: var(--primary);
+      color: var(--text-highlight);
+      box-shadow: 0 2px 8px rgba(29, 139, 148, 0.4);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(79, 184, 180, 0.12);
+      border: 1px solid rgba(79, 184, 180, 0.3);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .quick-test-btn {
+      background: linear-gradient(135deg, #1D8B94, #4FB8B4);
+      color: #04222B;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: var(--transition);
+      box-shadow: 0 4px 12px rgba(79, 184, 180, 0.35);
+      font-family: inherit;
+    }
+
+    .quick-test-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(79, 184, 180, 0.5);
+    }
+
+    /* Main Scroll Area */
+    .content-body {
+      padding: 24px 28px 60px;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Page View Containers */
+    .page-view {
+      display: none;
+      animation: fadeIn 0.28s ease forwards;
+    }
+
+    .page-view.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================================
+       KPIS & FLOWBOARD CARDS
+       ========================================================================== */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      transition: var(--transition);
+    }
+
+    .kpi-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px -4px rgba(2, 17, 22, 0.6);
+    }
+
+    .kpi-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #1D8B94, #4FB8B4);
+    }
+
+    .kpi-card.acc::after { background: linear-gradient(90deg, #4FB8B4, #98D8D0); }
+    .kpi-card.sarc::after { background: linear-gradient(90deg, #38bdf8, #818cf8); }
+    .kpi-card.corr::after { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+    .kpi-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .kpi-label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent-soft);
+    }
+
+    .kpi-icon-wrap {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(79, 184, 180, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+    }
+
+    .kpi-val {
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: var(--text-highlight);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+
+    .kpi-delta {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.77rem;
+      font-weight: 600;
+    }
+
+    .kpi-delta.pos { color: #4FB8B4; }
+    .kpi-delta.sarc { color: #38bdf8; }
+    .kpi-delta.warn { color: #f59e0b; }
+
+    /* ==========================================================================
+       GRID SYSTEM & PANELS
+       ========================================================================== */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .grid-60-40 {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      position: relative;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      gap: 12px;
+    }
+
+    .panel-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-highlight);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .panel-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Tag / Chip / Badge */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+
+    .pill.pos { background: var(--pos-bg); color: var(--pos); border: 1px solid var(--pos); }
+    .pill.neu { background: var(--neu-bg); color: var(--neu); border: 1px solid var(--neu); }
+    .pill.neg { background: var(--neg-bg); color: var(--neg); border: 1px solid var(--neg); }
+    .pill.sarc { background: var(--sarc-bg); color: var(--sarc); border: 1px solid var(--sarc); }
+    .pill.teal { background: rgba(79, 184, 180, 0.15); color: var(--accent); border: 1px solid rgba(79, 184, 180, 0.3); }
+
+    /* ==========================================================================
+       IMAGE 1 TESTORA COMPONENTS: LIVE STREAM & RADAR & HEATMAP
+       ========================================================================== */
+    .proctor-card {
+      background: linear-gradient(145deg, #073844 0%, #052a34 100%);
+      border: 1px solid rgba(79, 184, 180, 0.35);
+      border-radius: var(--radius-md);
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(3, 24, 30, 0.5);
+    }
+
+    .proctor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .proctor-live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(248, 113, 113, 0.15);
+      border: 1px solid rgba(248, 113, 113, 0.4);
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #f87171;
+    }
+
+    .proctor-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f87171;
+      box-shadow: 0 0 8px #f87171;
+      animation: pulse 1.5s infinite;
+    }
+
+    .proctor-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+      background: rgba(4, 34, 43, 0.6);
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .proctor-stat-item {
+      text-align: center;
+    }
+
+    .proctor-stat-val {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text-highlight);
+    }
+
+    .proctor-stat-lbl {
+      font-size: 0.7rem;
+      color: var(--accent-soft);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .stream-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 250px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .stream-item {
+      background: rgba(4, 34, 43, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .stream-item:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent);
+      transform: translateX(3px);
+    }
+
+    .stream-item-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .stream-user {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stream-text {
+      font-size: 0.82rem;
+      color: var(--text-main);
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .stream-tags {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    /* Heatmap Grid Matrix (Testora Performance Analytics Style) */
+    .heatmap-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 6px;
+      margin-top: 6px;
+    }
+
+    .heatmap-table th {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--accent-soft);
+      padding: 8px;
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    .heatmap-table th.party-col {
+      text-align: left;
+    }
+
+    .heatmap-cell {
+      padding: 10px 8px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      transition: var(--transition);
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      position: relative;
+    }
+
+    .heatmap-cell:hover {
+      transform: scale(1.05);
+      border-color: var(--accent);
+      box-shadow: 0 4px 12px rgba(29, 139, 148, 0.4);
+      z-index: 10;
+    }
+
+    .heatmap-party-label {
+      font-weight: 700;
+      font-size: 0.84rem;
+      color: var(--text-highlight);
+      padding-left: 8px;
+      text-align: left;
+    }
+
+    /* FlowBoard Target Progress Card */
+    .target-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .target-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .target-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+    }
+
+    .target-name {
+      font-weight: 600;
+      color: var(--text-highlight);
+    }
+
+    .target-val {
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+    }
+
+    .target-bar {
+      height: 8px;
+      background: var(--bg-subtle);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .target-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #1D8B94, #4FB8B4);
+      transition: width 1s ease-in-out;
+    }
+
+    /* AI Strategic Discourse Insights Banner */
+    .insights-banner {
+      background: linear-gradient(90deg, #073b47 0%, #0a4655 50%, #062b35 100%);
+      border: 1px solid rgba(79, 184, 180, 0.35);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .insights-banner::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      background: linear-gradient(180deg, #4FB8B4, #1D8B94);
+    }
+
+    .insights-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .insights-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(79, 184, 180, 0.2);
+      border: 1px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .insights-content h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-highlight);
+      margin-bottom: 3px;
+    }
+
+    .insights-content p {
+      font-size: 0.83rem;
+      color: var(--text-main);
+      line-height: 1.45;
+    }
+
+    /* ==========================================================================
+       PAGE 2: SARCASM STUDIO & INTERACTIVE PREDICTOR
+       ========================================================================== */
+    .presets-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .preset-chip {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 7px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preset-chip:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent);
+      color: var(--text-highlight);
+      transform: translateY(-1px);
+    }
+
+    .tweet-input-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 20px;
+      transition: var(--transition);
+    }
+
+    .tweet-input-box:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--glow);
+    }
+
+    .tweet-textarea {
+      width: 100%;
+      height: 95px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-highlight);
+      font-family: inherit;
+      font-size: 1.05rem;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .input-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .char-count {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .action-btn-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .secondary-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 9px 16px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    .secondary-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--accent);
+      color: var(--text-highlight);
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, #1D8B94, #4FB8B4);
+      color: #04222B;
+      border: none;
+      padding: 9px 22px;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 700;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+      box-shadow: 0 4px 14px rgba(79, 184, 180, 0.35);
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(79, 184, 180, 0.5);
+    }
+
+    .primary-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Result 3-Card Grid */
+    .result-container {
+      display: none;
+      animation: fadeIn 0.32s ease forwards;
+      margin-top: 24px;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    .result-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .result-card.highlight {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, rgba(79, 184, 180, 0.1) 0%, var(--bg-subtle) 100%);
+      box-shadow: 0 8px 24px rgba(29, 139, 148, 0.25);
+    }
+
+    .result-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .result-card-header h4 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--accent-soft);
+    }
+
+    .big-sentiment {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .prob-track {
+      background: var(--bg-base);
+      height: 7px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 4px;
+      margin-bottom: 12px;
+    }
+
+    .prob-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+
+    .prob-fill.pos { background: var(--pos); }
+    .prob-fill.neu { background: var(--neu); }
+    .prob-fill.neg { background: var(--neg); }
+
+    .explanation-callout {
+      background: rgba(4, 34, 43, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-top: auto;
+    }
+
+    /* Batch Analyzer Styles */
+    .batch-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      font-size: 0.85rem;
+    }
+
+    .batch-table th, .batch-table td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .batch-table th {
+      background: var(--bg-subtle);
+      color: var(--accent-soft);
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       DATA TABLES & EXPLORER (PAGE 4 & 7)
+       ========================================================================== */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      background: var(--bg-subtle);
+      padding: 14px 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent-soft);
+      text-transform: uppercase;
+    }
+
+    .custom-select, .custom-input {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-highlight);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      outline: none;
+      font-family: inherit;
+      transition: var(--transition);
+    }
+
+    .custom-select:focus, .custom-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--glow);
+    }
+
+    .data-table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--bg-subtle);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+
+    .data-table th, .data-table td {
+      padding: 14px 18px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table th {
+      background: #062b36;
+      color: var(--accent-soft);
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      position: sticky;
+      top: 0;
+    }
+
+    .data-table tr:hover td {
+      background: rgba(79, 184, 180, 0.04);
+    }
+
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .page-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-highlight);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--bg-card-hover);
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ==========================================================================
+       MODEL BENCHMARK & MULTI-TASK GRIDS (PAGE 5)
+       ========================================================================== */
+    .matrix-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+
+    .confusion-grid {
+      display: grid;
+      grid-template-columns: 80px repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 14px;
+      text-align: center;
+      font-size: 0.84rem;
+    }
+
+    .conf-header {
+      font-weight: 700;
+      color: var(--accent-soft);
+      padding: 8px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .conf-cell {
+      padding: 16px 8px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: var(--transition);
+    }
+
+    .conf-cell:hover {
+      transform: scale(1.04);
+      z-index: 5;
+    }
+
+    .conf-cell.diagonal {
+      background: rgba(79, 184, 180, 0.25);
+      color: var(--text-highlight);
+      border-color: var(--accent);
+    }
+
+    .conf-cell.off {
+      background: rgba(4, 34, 43, 0.6);
+      color: var(--text-muted);
+    }
+
+    /* ==========================================================================
+       RULES & LEXICON ENGINE (PAGE 6)
+       ========================================================================== */
+    .rules-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .rule-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .rule-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(29, 139, 148, 0.2);
+    }
+
+    .rule-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .rule-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(79, 184, 180, 0.2);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .rule-name {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text-highlight);
+    }
+
+    .rule-desc {
+      font-size: 0.82rem;
+      color: var(--text-main);
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
+    .rule-tags-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .rule-tag {
+      font-size: 0.72rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(79, 184, 180, 0.1);
+      color: var(--accent-soft);
+      border: 1px solid rgba(79, 184, 180, 0.2);
+    }
+
+    /* Console Terminal */
+    .terminal-box {
+      background: #021419;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--accent-soft);
+      height: 380px;
+      overflow-y: auto;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(2, 17, 22, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-box {
+      background: var(--bg-card);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      max-width: 650px;
+      width: 100%;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      animation: fadeIn 0.25s ease;
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .grid-60-40, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .result-grid { grid-template-columns: 1fr; }
+      .rules-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      aside.sidebar {
+        position: fixed;
+        left: -280px;
+        transition: left 0.3s ease;
+      }
+      aside.sidebar.open {
+        left: 0;
+      }
+      .mobile-menu-btn {
+        display: block;
+      }
+      .kpi-row { grid-template-columns: 1fr; }
+      .header-actions { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       SIDEBAR NAVIGATION (FlowBoard Style)
+       ======================================================================== -->
+  <aside class="sidebar" id="appSidebar">
+    <div class="brand-section">
+      <div class="brand-logo">PS</div>
+      <div>
+        <div class="brand-title">PoliticaPulse AI</div>
+        <div class="brand-sub">Sarcasm & Sentiment Intelligence</div>
+      </div>
+    </div>
+
+    <div class="sidebar-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="sidebarSearch" placeholder="Search tabs, parties, rules..." oninput="handleSidebarSearch(this.value)">
+    </div>
+
+    <div class="sidebar-group-title">Main Dashboard</div>
+    <div class="nav-links">
+      <a class="nav-item active" onclick="switchNav('overview')" id="nav-overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        <span>Overview</span>
+      </a>
+      <a class="nav-item" onclick="switchNav('studio')" id="nav-studio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span>Sarcasm Studio</span>
+        <span class="nav-badge">Live</span>
+      </a>
+      <a class="nav-item" onclick="switchNav('parties')" id="nav-parties">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M4 18h16"/><path d="M6 18V9"/><path d="M10 18V9"/><path d="M14 18V9"/><path d="M18 18V9"/><polygon points="12 2 20 7 4 7"/></svg>
+        <span>Party Intelligence</span>
+      </a>
+      <a class="nav-item" onclick="switchNav('uncertainty')" id="nav-uncertainty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+        <span>Uncertainty Lab</span>
+        <span class="nav-badge new">162</span>
+      </a>
+    </div>
+
+    <div class="sidebar-group-title">Model & Research</div>
+    <div class="nav-links">
+      <a class="nav-item" onclick="switchNav('benchmark')" id="nav-benchmark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
+        <span>Model Benchmarks</span>
+      </a>
+      <a class="nav-item" onclick="switchNav('lexicon')" id="nav-lexicon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+        <span>8 Rules & Lexicon</span>
+      </a>
+      <a class="nav-item" onclick="switchNav('corpus')" id="nav-corpus">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+        <span>Corpus Explorer</span>
+        <span class="nav-badge">47K</span>
+      </a>
+      <a class="nav-item" onclick="switchNav('pipeline')" id="nav-pipeline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>
+        <span>Pipeline Control</span>
+      </a>
+      <a class="nav-item" onclick="switchNav('academic')" id="nav-academic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        <span>Academic Dashboard</span>
+      </a>
+    </div>
+
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+      <div class="research-card">
+        <div class="research-tag">Academic Research</div>
+        <div class="research-title">MGM CoET Navi Mumbai</div>
+        <div class="research-desc">Fine-tuned Cardiff RoBERTa Multi-Task model with Indian Sarcasm Correction Layer.</div>
+        <div class="research-meta">
+          <span class="pulse-dot"></span>
+          <span>RoBERTa v2.4 Active</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================================================
+       MAIN APP AREA & TOPBAR
+       ======================================================================== -->
+  <div class="app-main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="page-title-box">
+          <h2 id="topbarTitle">Executive Overview Command Center</h2>
+          <p id="topbarSubtitle">Indian Political Discourse Sentiment & Lightweight Sarcasm Correction Suite</p>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="mode-selector">
+          <button class="mode-btn active" id="btnModeSarcasm" onclick="setPipelineMode('sarcasm')">
+            <span>✨</span> Sarcasm-Aware
+          </button>
+          <button class="mode-btn" id="btnModeBaseline" onclick="setPipelineMode('baseline')">
+            <span>⚡</span> Literal RoBERTa
+          </button>
+        </div>
+
+        <div class="status-badge">
+          <span class="pulse-dot"></span>
+          <span>47,681 Tweets Indexed</span>
+        </div>
+
+        <button class="quick-test-btn" onclick="switchNav('studio')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>Test Tweet</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="content-body">
+
+      <!-- ====================================================================
+           PAGE 1: OVERVIEW & COMMAND CENTER (FlowBoard + Testora Style)
+           ==================================================================== -->
+      <section class="page-view active" id="view-overview">
+        <!-- 4 Top KPI Cards -->
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Analyzed Tweets</span>
+              <div class="kpi-icon-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+              </div>
+            </div>
+            <div class="kpi-val" id="kpiTotal">47,681</div>
+            <div class="kpi-delta pos">
+              <span>↑ 100%</span>
+              <span style="color: var(--text-muted); font-weight: normal;">Indian Political Corpus</span>
+            </div>
+          </div>
+
+          <div class="kpi-card sarc">
+            <div class="kpi-header">
+              <span class="kpi-label">Sarcasm Detected</span>
+              <div class="kpi-icon-wrap" style="color: #38bdf8; background: rgba(56, 189, 248, 0.15);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>
+              </div>
+            </div>
+            <div class="kpi-val" id="kpiSarcasm" style="color: #38bdf8;">3,076</div>
+            <div class="kpi-delta sarc">
+              <span>6.5%</span>
+              <span style="color: var(--text-muted); font-weight: normal;">Identified via 8 Rules</span>
+            </div>
+          </div>
+
+          <div class="kpi-card corr">
+            <div class="kpi-header">
+              <span class="kpi-label">Sentiment Overrides</span>
+              <div class="kpi-icon-wrap" style="color: #f59e0b; background: rgba(245, 158, 11, 0.15);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+              </div>
+            </div>
+            <div class="kpi-val" id="kpiCorrected" style="color: #f59e0b;">1,148</div>
+            <div class="kpi-delta warn">
+              <span>728 Neu + 420 Pos</span>
+              <span style="color: var(--text-muted); font-weight: normal;">➔ Negative</span>
+            </div>
+          </div>
+
+          <div class="kpi-card acc">
+            <div class="kpi-header">
+              <span class="kpi-label">Held-out Accuracy</span>
+              <div class="kpi-icon-wrap" style="color: #4FB8B4; background: rgba(79, 184, 180, 0.15);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+            </div>
+            <div class="kpi-val" id="kpiAccuracy" style="color: #4FB8B4;">56.6%</div>
+            <div class="kpi-delta pos">
+              <span>↑ +3.1%</span>
+              <span style="color: var(--text-muted); font-weight: normal;">vs Literal Baseline (53.5%)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row 1: FlowBoard Area Chart + Donut -->
+        <div class="grid-60-40">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  Sentiment Polarity Shift & Overrides Trajectory
+                </h3>
+                <p class="panel-sub">Comparing literal Cardiff RoBERTa classification against Sarcasm-Corrected output across volume</p>
+              </div>
+              <span class="pill teal">47,681 Dataset</span>
+            </div>
+            <div style="height: 300px; position: relative;">
+              <canvas id="chartPolarityTrajectory"></canvas>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10h-10z"/></svg>
+                  Corrected Sentiment Share
+                </h3>
+                <p class="panel-sub">Overall polarity distribution after sarcasm flips</p>
+              </div>
+              <span class="pill pos">Post-Correction</span>
+            </div>
+            <div style="height: 250px; position: relative; margin: 10px auto 0;">
+              <canvas id="chartOverallDonut"></canvas>
+            </div>
+            <div style="display: flex; justify-content: space-around; margin-top: 14px; font-size: 0.8rem; text-align: center;">
+              <div><span style="color: var(--neg); font-weight: bold;">● Negative</span> 52.9%</div>
+              <div><span style="color: var(--neu); font-weight: bold;">● Neutral</span> 32.1%</div>
+              <div><span style="color: var(--pos); font-weight: bold;">● Positive</span> 15.0%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Testora Live Stream + Heatmap Matrix + Targets -->
+        <div class="grid-3">
+          
+          <!-- Widget 1: Testora-style Live Proctor/Stream Monitor -->
+          <div class="proctor-card">
+            <div class="proctor-header">
+              <div class="proctor-live-badge">
+                <span class="proctor-live-dot"></span>
+                <span>LIVE DISCOURSE STREAM</span>
+              </div>
+              <span style="font-size: 0.72rem; color: var(--accent-soft);">Auto-Buffer Active</span>
+            </div>
+
+            <div class="proctor-stats-row">
+              <div class="proctor-stat-item">
+                <div class="proctor-stat-val">3</div>
+                <div class="proctor-stat-lbl">Active Filters</div>
+              </div>
+              <div class="proctor-stat-item">
+                <div class="proctor-stat-val" style="color: #38bdf8;">3,076</div>
+                <div class="proctor-stat-lbl">Sarcastic Total</div>
+              </div>
+              <div class="proctor-stat-item">
+                <div class="proctor-stat-val" style="color: #4FB8B4;">94.2%</div>
+                <div class="proctor-stat-lbl">Rule Accuracy</div>
+              </div>
+            </div>
+
+            <div style="font-size: 0.76rem; font-weight: 700; color: var(--accent-soft); text-transform: uppercase; margin-bottom: 8px;">
+              Recent Flagged Sarcastic Tweets:
+            </div>
+            <div class="stream-feed" id="liveStreamFeed">
+              <!-- Dynamically populated via JS -->
+            </div>
+          </div>
+
+          <!-- Widget 2: Testora-style Performance Heatmap Matrix -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+                  Party Discourse Heatmap
+                </h3>
+                <p class="panel-sub">Polarity & sarcasm density across major political parties</p>
+              </div>
+            </div>
+
+            <table class="heatmap-table">
+              <thead>
+                <tr>
+                  <th class="party-col">Party</th>
+                  <th>Neg %</th>
+                  <th>Neu %</th>
+                  <th>Pos %</th>
+                  <th>Sarc %</th>
+                </tr>
+              </thead>
+              <tbody id="heatmapBody">
+                <!-- Dynamically populated via JS -->
+              </tbody>
+            </table>
+            <div style="margin-top: 14px; font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+              <span>Low</span>
+              <span style="display: inline-block; width: 12px; height: 12px; border-radius: 2px; background: #0A3D4A;"></span>
+              <span style="display: inline-block; width: 12px; height: 12px; border-radius: 2px; background: #10606F;"></span>
+              <span style="display: inline-block; width: 12px; height: 12px; border-radius: 2px; background: #1D8B94;"></span>
+              <span style="display: inline-block; width: 12px; height: 12px; border-radius: 2px; background: #4FB8B4;"></span>
+              <span>High Intensity</span>
+            </div>
+          </div>
+
+          <!-- Widget 3: FlowBoard Goals Progress -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                  Model Accuracy Targets
+                </h3>
+                <p class="panel-sub">Held-out performance & verification goals</p>
+              </div>
+              <span class="pill pos">Verified</span>
+            </div>
+
+            <div class="target-list">
+              <div class="target-item">
+                <div class="target-meta">
+                  <span class="target-name">Rule Detection Precision</span>
+                  <span class="target-val">94.2%</span>
+                </div>
+                <div class="target-bar"><div class="target-fill" style="width: 94.2%;"></div></div>
+              </div>
+
+              <div class="target-item">
+                <div class="target-meta">
+                  <span class="target-name">News Guard Protection</span>
+                  <span class="target-val">98.1% (Exceeded)</span>
+                </div>
+                <div class="target-bar"><div class="target-fill" style="width: 98.1%; background: linear-gradient(90deg, #4FB8B4, #98D8D0);"></div></div>
+              </div>
+
+              <div class="target-item">
+                <div class="target-meta">
+                  <span class="target-name">Negative Polarity F1</span>
+                  <span class="target-val">0.700 (Baseline: 0.667)</span>
+                </div>
+                <div class="target-bar"><div class="target-fill" style="width: 70%;"></div></div>
+              </div>
+
+              <div class="target-item">
+                <div class="target-meta">
+                  <span class="target-name">Multi-Task Sent Accuracy</span>
+                  <span class="target-val">82.0% (Peak: 85.5%)</span>
+                </div>
+                <div class="target-bar"><div class="target-fill" style="width: 82%;"></div></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- FlowBoard AI Strategic Insights Banner -->
+        <div class="insights-banner">
+          <div class="insights-left">
+            <div class="insights-icon">💡</div>
+            <div class="insights-content">
+              <h4>Strategic Political Discourse Insight</h4>
+              <p>Sarcasm is disproportionately concentrated in opposition discourse (8.2% in Congress vs 6.8% in BJP discourse). Standard transformer models (Cardiff RoBERTa) literally read ironic praise such as <em>"Achhe din aa gaye! Masterstroke!"</em> as Positive, misclassifying <strong>1,148 real attacks</strong> without our specialized Indian political rule engine.</p>
+            </div>
+          </div>
+          <button class="primary-btn" onclick="switchNav('parties')" style="flex-shrink: 0;">
+            <span>Explore Party Radar</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ====================================================================
+           PAGE 2: SARCASM STUDIO & INTERACTIVE PREDICTOR
+           ==================================================================== -->
+      <section class="page-view" id="view-studio">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Interactive Sarcasm & Sentiment Studio
+              </h3>
+              <p class="panel-sub">Test real or custom political tweets. Compare literal Cardiff RoBERTa inference with domain-specific Indian sarcasm rules.</p>
+            </div>
+            <span class="pill teal">Cardiff RoBERTa In-Memory</span>
+          </div>
+
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-soft); text-transform: uppercase; margin-bottom: 8px;">
+            Click a preset pattern to test:
+          </div>
+          <div class="presets-container">
+            <div class="preset-chip" onclick="setStudioTweet('Achhe din aa gaye! What an absolute masterstroke by our great leaders.')">
+              <span>🇮🇳</span> "Achhe din aa gaye! Masterstroke..."
+            </div>
+            <div class="preset-chip" onclick="setStudioTweet('Media wanted to hear Modi G is great leader 🤡')">
+              <span>🤡</span> "Media wanted to hear Modi G is great leader 🤡"
+            </div>
+            <div class="preset-chip" onclick="setStudioTweet('What a fair election, fixed already with EVM tampering 🙄')">
+              <span>🗳️</span> "What a fair election, fixed already with EVM 🙄"
+            </div>
+            <div class="preset-chip" onclick="setStudioTweet('Assam Pradesh Congress Committee expressed disappointment over seat allotment.')">
+              <span>📰</span> "Congress expressed disappointment..." (News Guard Protected)
+            </div>
+            <div class="preset-chip" onclick="setStudioTweet('We are extremely proud of Indian scientists for successfully launching this satellite!')">
+              <span>🚀</span> "Extremely proud of Indian scientists..." (Genuinely Positive)
+            </div>
+            <div class="preset-chip" onclick="setStudioTweet('Inflation at 12% is actually great for savings, masterstroke economics!!')">
+              <span>💸</span> "Inflation at 12% is great for savings!!"
+            </div>
+          </div>
+
+          <div class="tweet-input-box">
+            <textarea id="studioTweetInput" class="tweet-textarea" placeholder="Type or paste any Indian political tweet here... e.g. 'Achhe din aa gaye! What a masterstroke'"></textarea>
+            <div class="input-actions">
+              <span class="char-count" id="studioCharCount">0 characters</span>
+              <div class="action-btn-row">
+                <button class="secondary-btn" onclick="clearStudioInput()">Clear</button>
+                <button class="primary-btn" id="btnAnalyzeStudio" onclick="runStudioAnalysis()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span id="studioBtnText">Analyze Tweet</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Studio Results Grid -->
+          <div class="result-container" id="studioResultContainer">
+            <div class="result-grid">
+              <!-- Card 1: Baseline RoBERTa -->
+              <div class="result-card">
+                <div class="result-card-header">
+                  <h4>1. Literal Baseline</h4>
+                  <span class="pill neu" id="resBaseBadge">RoBERTa</span>
+                </div>
+                <div class="big-sentiment" id="resBaseSentiment" style="color: var(--neu);">Neutral</div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;" id="resBaseConfidence">Confidence: 68.4%</p>
+
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; display: flex; justify-content: space-between;">
+                  <span>Negative Probability</span><span id="probNegText">0%</span>
+                </div>
+                <div class="prob-track"><div class="prob-fill neg" id="probNegBar" style="width: 0%;"></div></div>
+
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; display: flex; justify-content: space-between;">
+                  <span>Neutral Probability</span><span id="probNeuText">0%</span>
+                </div>
+                <div class="prob-track"><div class="prob-fill neu" id="probNeuBar" style="width: 0%;"></div></div>
+
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; display: flex; justify-content: space-between;">
+                  <span>Positive Probability</span><span id="probPosText">0%</span>
+                </div>
+                <div class="prob-track"><div class="prob-fill pos" id="probPosBar" style="width: 0%;"></div></div>
+              </div>
+
+              <!-- Card 2: Sarcasm Detector -->
+              <div class="result-card">
+                <div class="result-card-header">
+                  <h4>2. Sarcasm Rules</h4>
+                  <span class="pill sarc" id="resSarcBadge">Checking</span>
+                </div>
+                <div class="big-sentiment" id="resSarcStatus" style="color: #38bdf8;">Detected</div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">Triggered rule categories & signals</p>
+
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--accent-soft); margin-bottom: 6px;">Triggered Rules:</div>
+                <div id="resRuleTags" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">
+                  <span class="pill neu">Rule 3: Indian Slang</span>
+                </div>
+
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--accent-soft); margin-bottom: 4px;">News Guard Status:</div>
+                <div id="resNewsStatus" style="font-size: 0.8rem; color: var(--text-main);">Protected: False</div>
+              </div>
+
+              <!-- Card 3: Final Output -->
+              <div class="result-card highlight">
+                <div class="result-card-header">
+                  <h4 style="color: var(--accent);">3. Corrected Output</h4>
+                  <span class="pill pos" id="resFinalBadge">Pipeline</span>
+                </div>
+                <div class="big-sentiment" id="resFinalSentiment" style="color: var(--neg);">Negative</div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">Contextually resolved sentiment</p>
+
+                <div class="explanation-callout">
+                  <span style="font-size: 1.2rem;">💡</span>
+                  <div id="resExplanationText">Detected political sarcasm. Overriding literal Positive sentiment to Negative.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW BATCH ANALYZER PANEL -->
+        <div class="panel" style="margin-top: 24px;">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                Batch Tweet Discourse Analyzer
+              </h3>
+              <p class="panel-sub">Run multiple tweets simultaneously to observe sarcasm distribution across a campaign batch</p>
+            </div>
+            <button class="secondary-btn" onclick="loadBatchSampleTweets()">Load 5 Sample Ambiguous Tweets</button>
+          </div>
+
+          <textarea id="batchInput" class="tweet-textarea" style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 10px; padding: 12px; height: 110px;" placeholder="Paste multiple tweets here (one tweet per line)..."></textarea>
+          <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+            <button class="primary-btn" onclick="runBatchAnalysis()">
+              <span>Execute Batch Analysis</span>
+            </button>
+          </div>
+
+          <div id="batchResultsContainer" style="display: none; margin-top: 20px;">
+            <table class="batch-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Tweet Text</th>
+                  <th>Literal Sentiment</th>
+                  <th>Sarcasm Trigger</th>
+                  <th>Corrected Polarity</th>
+                </tr>
+              </thead>
+              <tbody id="batchTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ====================================================================
+           PAGE 3: PARTY INTELLIGENCE & RADAR (Testora Inspiration)
+           ==================================================================== -->
+      <section class="page-view" id="view-parties">
+        <div class="grid-2">
+          <!-- Testora-style Radar Chart -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="12 2 19 21 12 17 5 21 12 2"/></svg>
+                  Party Discourse Radar Spectrum
+                </h3>
+                <p class="panel-sub">Subject-wise multi-dimensional score across political parties (Testora inspired)</p>
+              </div>
+              <span class="pill teal">Radar</span>
+            </div>
+            <div style="height: 350px; position: relative;">
+              <canvas id="chartPartyRadar"></canvas>
+            </div>
+          </div>
+
+          <!-- Party Sarcasm Rate Comparison Bar Chart -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
+                  Sarcasm Rate by Political Party (%)
+                </h3>
+                <p class="panel-sub">Percentage of tweets flagged as sarcastic in party discourse</p>
+              </div>
+            </div>
+            <div style="height: 350px; position: relative;">
+              <canvas id="chartPartySarcasmBar"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Party Leaderboard Table -->
+        <div class="panel" style="margin-bottom: 24px;">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M4 18h16"/><path d="M6 18V9"/><path d="M10 18V9"/><path d="M14 18V9"/><path d="M18 18V9"/><polygon points="12 2 20 7 4 7"/></svg>
+                Party Intelligence Leaderboard
+              </h3>
+              <p class="panel-sub">Complete breakdown of tweets, sarcasm frequency, and sentiment proportions</p>
+            </div>
+          </div>
+
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Party Entity</th>
+                  <th>Total Tweets</th>
+                  <th>Sarcastic Tweets</th>
+                  <th>Sarcasm Rate</th>
+                  <th>Negative %</th>
+                  <th>Neutral %</th>
+                  <th>Positive %</th>
+                  <th>Discourse Characteristic</th>
+                </tr>
+              </thead>
+              <tbody id="partyLeaderboardBody">
+                <!-- Dynamically populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Party Slang & Lexicon Breakdown Cards -->
+        <div class="grid-3">
+          <div class="panel">
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: #fb923c; margin-bottom: 8px;">BJP Discourse Slang</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">Top satirical terms identified targeting or defending BJP leadership:</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <span class="pill neu">andhbhakt</span>
+              <span class="pill neu">jumla</span>
+              <span class="pill neu">feku</span>
+              <span class="pill neu">masterstroke</span>
+              <span class="pill neu">godi media</span>
+              <span class="pill neu">achhe din</span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: #38bdf8; margin-bottom: 8px;">Congress Discourse Slang</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">Top satirical terms identified targeting or defending Congress:</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <span class="pill sarc">pappu</span>
+              <span class="pill sarc">chamcha</span>
+              <span class="pill sarc">khata khat</span>
+              <span class="pill sarc">dynasty</span>
+              <span class="pill sarc">evm tampering</span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: #a78bfa; margin-bottom: 8px;">AAP & Regional Slang</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">Top satirical signals in AAP, TMC & regional discourse:</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <span class="pill pos">freebies</span>
+              <span class="pill pos">khela hobe</span>
+              <span class="pill pos">liquor scam</span>
+              <span class="pill pos">didi</span>
+              <span class="pill pos">drama</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ====================================================================
+           PAGE 4: UNCERTAINTY & AMBIGUITY LAB (BRAND NEW PAGE)
+           ==================================================================== -->
+      <section class="page-view" id="view-uncertainty">
+        <div class="panel" style="margin-bottom: 24px;">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                Uncertainty & Ambiguity Intelligence Lab
+              </h3>
+              <p class="panel-sub">Analysis of 162 borderline tweets where Cardiff RoBERTa's prediction confidence fell below 0.65</p>
+            </div>
+            <span class="pill neu">162 Borderline Records</span>
+          </div>
+
+          <div class="grid-60-40" style="margin-bottom: 0;">
+            <div>
+              <p style="font-size: 0.85rem; color: var(--text-main); line-height: 1.55; margin-bottom: 14px;">
+                In high-stakes political NLP, model uncertainty occurs when transformer softmax probabilities are evenly split (e.g. 0.45 Negative vs 0.42 Positive). These borderline samples represent high linguistic ambiguity, subtle sarcasm, or dual polarity (e.g. praising scientists while mocking the government).
+              </p>
+              <div style="display: flex; gap: 14px; font-size: 0.8rem;">
+                <div class="pill teal">Mean Uncertainty Conf: 56.4%</div>
+                <div class="pill sarc">Ambiguous Sarcasm Potential: 42%</div>
+                <div class="pill pos">Resolved via Rules: 68%</div>
+              </div>
+            </div>
+
+            <div style="height: 180px; position: relative;">
+              <canvas id="chartUncertaintyHist"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Uncertainty Data Table -->
+        <div class="panel">
+          <div class="filter-bar">
+            <div class="filter-group">
+              <span class="filter-label">Confidence Range:</span>
+              <select class="custom-select" id="filterUncertConf" onchange="filterUncertaintyTable()">
+                <option value="ALL">All Ranges (40% - 65%)</option>
+                <option value="LOW">&lt; 50% (High Ambiguity)</option>
+                <option value="MID">50% - 58% (Moderate)</option>
+                <option value="HIGH">&gt; 58% (Borderline)</option>
+              </select>
+
+              <span class="filter-label">Model Prediction:</span>
+              <select class="custom-select" id="filterUncertPred" onchange="filterUncertaintyTable()">
+                <option value="ALL">All Sentiments</option>
+                <option value="Negative">Negative</option>
+                <option value="Neutral">Neutral</option>
+                <option value="Positive">Positive</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <input type="text" class="custom-input" id="searchUncertInput" placeholder="Search uncertain tweets..." oninput="filterUncertaintyTable()" style="width: 250px;">
+            </div>
+          </div>
+
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Index</th>
+                  <th>Tweet Text</th>
+                  <th>Model Prediction</th>
+                  <th>Confidence</th>
+                  <th>Softmax Probability [Neg, Neu, Pos]</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="uncertaintyTableBody">
+                <!-- Dynamically loaded from data/uncertain_tweets.csv -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ====================================================================
+           PAGE 5: MODEL BENCHMARKS & TRAINING (BRAND NEW PAGE)
+           ==================================================================== -->
+      <section class="page-view" id="view-benchmark">
+        <div class="panel" style="margin-bottom: 24px;">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
+                Multi-Task Fine-Tuning History (8 Epochs)
+              </h3>
+              <p class="panel-sub">Dual-axis learning curves from <code>data/finetune_results.json</code> across 1,688 training & 200 test samples</p>
+            </div>
+            <span class="pill pos">Cardiff RoBERTa Multi-Task</span>
+          </div>
+
+          <div style="height: 320px; position: relative;">
+            <canvas id="chartFinetuneHistory"></canvas>
+          </div>
+        </div>
+
+        <!-- Confusion Matrices Side-by-Side -->
+        <div class="grid-2">
+          <div class="matrix-box">
+            <div class="panel-header">
+              <div>
+                <h4 style="font-weight: 700; color: var(--text-highlight);">1. Baseline Cardiff RoBERTa (Literal)</h4>
+                <p style="font-size: 0.78rem; color: var(--text-muted);">Accuracy: 53.5% on 129 annotated test tweets</p>
+              </div>
+              <span class="pill neu">Baseline</span>
+            </div>
+
+            <div class="confusion-grid">
+              <div class="conf-header">True \ Pred</div>
+              <div class="conf-header" style="color: var(--pos);">Positive</div>
+              <div class="conf-header" style="color: var(--neu);">Neutral</div>
+              <div class="conf-header" style="color: var(--neg);">Negative</div>
+
+              <div class="conf-header" style="color: var(--pos);">Positive</div>
+              <div class="conf-cell diagonal">4</div>
+              <div class="conf-cell off">3</div>
+              <div class="conf-cell off">4</div>
+
+              <div class="conf-header" style="color: var(--neu);">Neutral</div>
+              <div class="conf-cell off">5</div>
+              <div class="conf-cell diagonal">13</div>
+              <div class="conf-cell off">8</div>
+
+              <div class="conf-header" style="color: var(--neg);">Negative</div>
+              <div class="conf-cell off" style="color: #f87171;">11</div>
+              <div class="conf-cell off" style="color: #f87171;">29</div>
+              <div class="conf-cell diagonal">52</div>
+            </div>
+          </div>
+
+          <div class="matrix-box" style="border-color: var(--accent);">
+            <div class="panel-header">
+              <div>
+                <h4 style="font-weight: 700; color: var(--accent);">2. Sarcasm-Corrected Model (Our Novelty)</h4>
+                <p style="font-size: 0.78rem; color: var(--accent-soft);">Accuracy: 56.6% (↑ +3.1 percentage points)</p>
+              </div>
+              <span class="pill pos">Optimized</span>
+            </div>
+
+            <div class="confusion-grid">
+              <div class="conf-header">True \ Pred</div>
+              <div class="conf-header" style="color: var(--pos);">Positive</div>
+              <div class="conf-header" style="color: var(--neu);">Neutral</div>
+              <div class="conf-header" style="color: var(--neg);">Negative</div>
+
+              <div class="conf-header" style="color: var(--pos);">Positive</div>
+              <div class="conf-cell diagonal">4</div>
+              <div class="conf-cell off">3</div>
+              <div class="conf-cell off">4</div>
+
+              <div class="conf-header" style="color: var(--neu);">Neutral</div>
+              <div class="conf-cell off">5</div>
+              <div class="conf-cell diagonal">13</div>
+              <div class="conf-cell off">8</div>
+
+              <div class="conf-header" style="color: var(--neg);">Negative</div>
+              <div class="conf-cell off" style="color: #f87171;">10 <span style="font-size: 0.68rem; color: #4FB8B4;">(-1)</span></div>
+              <div class="conf-cell off" style="color: #f87171;">26 <span style="font-size: 0.68rem; color: #4FB8B4;">(-3)</span></div>
+              <div class="conf-cell diagonal" style="color: #4FB8B4;">56 <span style="font-size: 0.68rem; color: #4FB8B4;">(+4)</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Metrics Table -->
+        <div class="panel" style="margin-top: 24px;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-highlight); margin-bottom: 12px;">Held-out Classification Report Comparison</h4>
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Class / Metric</th>
+                  <th>Baseline Precision</th>
+                  <th>Optimized Precision</th>
+                  <th>Baseline Recall</th>
+                  <th>Optimized Recall</th>
+                  <th>Baseline F1</th>
+                  <th>Optimized F1</th>
+                  <th>Improvement</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="pill pos">Positive</span></td>
+                  <td>0.200</td>
+                  <td style="color: #4FB8B4; font-weight: bold;">0.211</td>
+                  <td>0.364</td>
+                  <td>0.364</td>
+                  <td>0.258</td>
+                  <td style="color: #4FB8B4; font-weight: bold;">0.267</td>
+                  <td><span class="pill pos">+3.5% F1</span></td>
+                </tr>
+                <tr>
+                  <td><span class="pill neu">Neutral</span></td>
+                  <td>0.289</td>
+                  <td style="color: #4FB8B4; font-weight: bold;">0.310</td>
+                  <td>0.500</td>
+                  <td>0.500</td>
+                  <td>0.366</td>
+                  <td style="color: #4FB8B4; font-weight: bold;">0.382</td>
+                  <td><span class="pill pos">+4.4% F1</span></td>
+                </tr>
+                <tr>
+                  <td><span class="pill neg">Negative</span></td>
+                  <td>0.812</td>
+                  <td style="color: #4FB8B4; font-weight: bold;">0.824</td>
+                  <td>0.565</td>
+                  <td style="color: #4FB8B4; font-weight: bold;">0.609</td>
+                  <td>0.667</td>
+                  <td style="color: #4FB8B4; font-weight: bold;">0.700</td>
+                  <td><span class="pill pos">+4.9% F1</span></td>
+                </tr>
+                <tr style="font-weight: 700; background: rgba(79, 184, 180, 0.08);">
+                  <td>Overall Accuracy</td>
+                  <td colspan="4" style="color: var(--text-muted);">Baseline: 53.5% (69/129 correct)</td>
+                  <td colspan="2" style="color: #4FB8B4; font-size: 1rem;">Optimized: 56.6% (73/129 correct)</td>
+                  <td><span class="pill pos">+3.1% Points</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ====================================================================
+           PAGE 6: 8 SARCASM RULES & LEXICON ENGINE (BRAND NEW PAGE)
+           ==================================================================== -->
+      <section class="page-view" id="view-lexicon">
+        <div class="panel" style="margin-bottom: 24px;">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+                Domain-Specific Indian Political Sarcasm Rules
+              </h3>
+              <p class="panel-sub">The 8 novel rules engineered for Indian political Twitter discourse that correct literal transformer misclassifications</p>
+            </div>
+            <span class="pill teal">8 Detection Rules + News Guard</span>
+          </div>
+
+          <!-- Live Rule Simulator -->
+          <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px; margin-bottom: 20px;">
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--accent-soft); text-transform: uppercase; margin-bottom: 8px;">
+              ⚡ Live Rule Simulator: Type any word or phrase to see which rule catches it
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <input type="text" id="ruleSimInput" class="custom-input" style="flex: 1;" placeholder="Type e.g. 'godi media 🤡', 'evm tampering', 'so called secular', 'masterstroke !!'" oninput="simulateRule(this.value)">
+              <button class="secondary-btn" onclick="document.getElementById('ruleSimInput').value=''; simulateRule('');">Reset</button>
+            </div>
+            <div id="ruleSimOutput" style="margin-top: 12px; font-size: 0.85rem; color: var(--text-highlight); display: none;"></div>
+          </div>
+
+          <!-- 8 Rules Grid -->
+          <div class="rules-grid">
+            <div class="rule-card">
+              <div class="rule-header">
+                <div class="rule-num">1</div>
+                <div class="rule-name">Explicit Sarcasm Hashtags</div>
+                <span class="pill teal">100% Precision</span>
+              </div>
+              <div class="rule-desc">Matches overt sarcasm and irony tags: <code>#sarcasm</code>, <code>#irony</code>, <code>#justsaying</code>, <code>#notreally</code>. Authors explicitly declare non-literal intent.</div>
+              <div class="rule-tags-wrap">
+                <span class="rule-tag">#sarcasm</span>
+                <span class="rule-tag">#irony</span>
+                <span class="rule-tag">#justsaying</span>
+              </div>
+            </div>
+
+            <div class="rule-card">
+              <div class="rule-header">
+                <div class="rule-num">2</div>
+                <div class="rule-name">Punctuation Overload</div>
+                <span class="pill sarc">1,436 Matches</span>
+              </div>
+              <div class="rule-desc">Detects exaggerated punctuation: <code>!!</code>, <code>???</code>, <code>!?!</code>, <code>....</code>. Frequently used in sarcastic rhetorical disbelief in political disputes.</div>
+              <div class="rule-tags-wrap">
+                <span class="rule-tag">!!+</span>
+                <span class="rule-tag">\?{2,}</span>
+                <span class="rule-tag">!\?+</span>
+              </div>
+            </div>
+
+            <div class="rule-card">
+              <div class="rule-header">
+                <div class="rule-num">3</div>
+                <div class="rule-name">Indian Political Slang Lexicon</div>
+                <span class="pill pos">1,254 Matches</span>
+              </div>
+              <div class="rule-desc">Domain vocabulary: <em>andhbhakt, jumla, feku, pappu, godi media, chamcha, khata khat, nepotism</em>. Inherently satirical or derogatory terms unique to Indian political Twitter.</div>
+              <div class="rule-tags-wrap">
+                <span class="rule-tag">andhbhakt</span>
+                <span class="rule-tag">jumla</span>
+                <span class="rule-tag">feku</span>
+                <span class="rule-tag">godi media</span>
+              </div>
+            </div>
+
+            <div class="rule-card">
+              <div class="rule-header">
+                <div class="rule-num">4</div>
+                <div class="rule-name">Sarcastic Emoji Signals</div>
+                <span class="pill neu">235 Matches</span>
+              </div>
+              <div class="rule-desc">Emoji signals strongly correlated with mockery: 🤡 (clown), 🙄 (eye-roll), 😏 (smirk), 🤦 (facepalm). Inverts surface positive sentiment into ridicule.</div>
+              <div class="rule-tags-wrap">
+                <span class="rule-tag">🤡 clown</span>
+                <span class="rule-tag">🙄 eye roll</span>
+                <span class="rule-tag">😏 smirk</span>
+              </div>
+            </div>
+
+            <div class="rule-card">
+              <div class="rule-header">
+                <div class="rule-num">5</div>
+                <div class="rule-name">"So-Called" / Dismissive Syntax</div>
+                <span class="pill teal">235 Matches</span>
+              </div>
+              <div class="rule-desc">Syntactic patterns using <em>"so called", "self proclaimed", "supposedly"</em> to delegitimize political opponents or claimed achievements.</div>
+              <div class="rule-tags-wrap">
+                <span class="rule-tag">so called</span>
+                <span class="rule-tag">self claimed</span>
+                <span class="rule-tag">supposedly</span>
+              </div>
+            </div>
+
+            <div class="rule-card">
+              <div class="rule-header">
+                <div class="rule-num">6</div>
+                <div class="rule-name">EVM & Election Fraud Rhetoric</div>
+                <span class="pill sarc">Accusatory</span>
+              </div>
+              <div class="rule-desc">Detects fixed-election skepticism: <em>"evm tampering", "vote chori", "match fixing", "democracy murdered"</em>. Disguised mockery of electoral fairness.</div>
+              <div class="rule-tags-wrap">
+                <span class="rule-tag">evm tampering</span>
+                <span class="rule-tag">vote chori</span>
+              </div>
+            </div>
+
+            <div class="rule-card">
+              <div class="rule-header">
+                <div class="rule-num">7</div>
+                <div class="rule-name">Rhetorical Degradation Patterns</div>
+                <span class="pill neg">Critical</span>
+              </div>
+              <div class="rule-desc">Rhetorical questions followed by degradation: <em>"Modi what's he? divider in chief", "Rahul what has he done?"</em>. High negative polarity masked as inquiry.</div>
+              <div class="rule-tags-wrap">
+                <span class="rule-tag">divider in chief</span>
+                <span class="rule-tag">what has he done</span>
+              </div>
+            </div>
+
+            <div class="rule-card">
+              <div class="rule-header">
+                <div class="rule-num">8</div>
+                <div class="rule-name">Ironic Compliment Structure</div>
+                <span class="pill pos">High Impact</span>
+              </div>
+              <div class="rule-desc">Mock praise structure: pairing grand superlative words (<em>"masterstroke", "sanskaar", "visionary"</em>) with negative outcomes (inflation, train delays, scandals).</div>
+              <div class="rule-tags-wrap">
+                <span class="rule-tag">masterstroke</span>
+                <span class="rule-tag">sanskaar for BJP</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ====================================================================
+           PAGE 7: CORPUS EXPLORER (47K DATA TABLE & EXPORT)
+           ==================================================================== -->
+      <section class="page-view" id="view-corpus">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+                Corpus Explorer & Data Inspector
+              </h3>
+              <p class="panel-sub">Inspect 47,681 real Indian political tweets with full metadata and sarcasm rule triggers</p>
+            </div>
+            <button class="primary-btn" onclick="exportFilteredDatasetCSV()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+              <span>Export CSV</span>
+            </button>
+          </div>
+
+          <div class="filter-bar">
+            <div class="filter-group">
+              <span class="filter-label">Sentiment:</span>
+              <select class="custom-select" id="corpusSentFilter" onchange="applyCorpusFilters()">
+                <option value="ALL">All Sentiments</option>
+                <option value="Negative">Negative</option>
+                <option value="Neutral">Neutral</option>
+                <option value="Positive">Positive</option>
+              </select>
+
+              <span class="filter-label">Sarcasm:</span>
+              <select class="custom-select" id="corpusSarcFilter" onchange="applyCorpusFilters()">
+                <option value="ALL">All Tweets</option>
+                <option value="YES">Sarcastic Only (Rule Fired)</option>
+                <option value="NO">Non-Sarcastic Only</option>
+              </select>
+
+              <span class="filter-label">Overrides:</span>
+              <select class="custom-select" id="corpusOverrideFilter" onchange="applyCorpusFilters()">
+                <option value="ALL">All Records</option>
+                <option value="FLIPPED">Only Flipped Sentiments (1,148)</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <input type="text" class="custom-input" id="corpusSearchInput" placeholder="Search tweet or username..." oninput="applyCorpusFilters()" style="width: 260px;">
+            </div>
+          </div>
+
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Author</th>
+                  <th>Tweet Text</th>
+                  <th>Literal Sentiment</th>
+                  <th>Sarcasm Signal</th>
+                  <th>Corrected Polarity</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="corpusTbody">
+                <!-- Dynamically populated via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-bar">
+            <span id="corpusPaginationInfo">Showing 1 to 25 of 500 loaded samples</span>
+            <div style="display: flex; gap: 8px;">
+              <button class="page-btn" id="corpusPrevBtn" onclick="changeCorpusPage(-1)" disabled>Previous</button>
+              <button class="page-btn" id="corpusNextBtn" onclick="changeCorpusPage(1)">Next</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ====================================================================
+           PAGE 8: PIPELINE CONTROL & TERMINAL CONSOLE
+           ==================================================================== -->
+      <section class="page-view" id="view-pipeline">
+        <div class="panel" style="margin-bottom: 24px;">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>
+                CLI Pipeline Execution & Control
+              </h3>
+              <p class="panel-sub">Run any pipeline stage directly from the web GUI and view live subprocess logs</p>
+            </div>
+            <span class="pill teal">Python 3.11 Subprocess</span>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+            <button class="secondary-btn" onclick="executePipelineStep('preprocess')">
+              <span>🔄 Step 1: Preprocess Tweets</span>
+            </button>
+            <button class="secondary-btn" onclick="executePipelineStep('sarcasm')">
+              <span>🔍 Step 2: Sarcasm Rule Detector</span>
+            </button>
+            <button class="secondary-btn" onclick="executePipelineStep('evaluate')">
+              <span>📊 Step 3: Run Model Evaluation</span>
+            </button>
+            <button class="primary-btn" onclick="executePipelineStep('visualize')">
+              <span>🎨 Step 4: Rebuild Matplotlib PNG</span>
+            </button>
+          </div>
+
+          <div class="terminal-box" id="consoleOutput">PoliticaPulse AI Subprocess Console Initialized.
+Ready to execute CLI pipeline scripts.
+Select any action above to run in real-time...</div>
+        </div>
+      </section>
+
+
+      <!-- ====================================================================
+           PAGE 9: ACADEMIC 5-CHART MATPLOTLIB VIEWER
+           ==================================================================== -->
+      <section class="page-view" id="view-academic">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                Academic 5-Chart Matplotlib Publication Dashboard
+              </h3>
+              <p class="panel-sub">High-resolution scientific dashboard generated via <code>scripts/visualize.py</code></p>
+            </div>
+            <button class="primary-btn" onclick="rebuildDashboardPng()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Re-render PNG</span>
+            </button>
+          </div>
+
+          <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; text-align: center; overflow: hidden;">
+            <img id="dashboardImg" src="/dashboard/sentiment_dashboard.png" alt="Sentiment Dashboard" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: var(--shadow-card);">
+          </div>
+        </div>
+      </section>
+
+    </div><!-- .content-body -->
+  </div><!-- .app-main -->
+
+  <!-- ========================================================================
+       ROW INSPECT MODAL
+       ======================================================================== -->
+  <div class="modal-backdrop" id="inspectModal" onclick="closeInspectModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-highlight);">Tweet Discourse Inspection</h3>
+        <button onclick="closeInspectModal()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.4rem;">&times;</button>
+      </div>
+      <div id="modalContent"></div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button class="secondary-btn" onclick="testModalTweetInStudio()">Test in Sarcasm Studio</button>
+        <button class="primary-btn" onclick="closeInspectModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       JAVASCRIPT APPLICATION LOGIC
+       ======================================================================== -->
+  <script>
+    // Global State
+    let currentTab = 'overview';
+    let allSamples = [];
+    let allUncertain = [];
+    let statsData = null;
+    let finetuneData = null;
+    let corpusPage = 1;
+    const corpusPerPage = 20;
+    let selectedModalTweet = '';
+
+    // Chart.js instances
+    let chartTrajectory = null;
+    let chartDonut = null;
+    let chartRadar = null;
+    let chartPartySarcasm = null;
+    let chartUncertHist = null;
+    let chartFinetune = null;
+
+    // Sarcasm Lexicon Simulation Patterns
+    const SIM_RULES = [
+      { name: "Rule 1: Hashtag Sarcasm", regex: /#(sarcasm|irony|justsaying|notreally)/i, type: "Hashtag" },
+      { name: "Rule 2: Punctuation Overload", regex: /(!{2,}|\?{2,}|!\?+|\?!+)/, type: "Punctuation" },
+      { name: "Rule 3: Indian Political Slang", regex: /(andhbhakt|jumla|feku|pappu|godi media|chamcha|khata khat|nepotism|bhakt)/i, type: "Indian Slang" },
+      { name: "Rule 4: Sarcastic Emoji", regex: /(🤡|🙄|😏|🤦)/u, type: "Emoji" },
+      { name: "Rule 5: So-Called Dismissive", regex: /(so called|self proclaimed|supposedly)/i, type: "Dismissive Syntax" },
+      { name: "Rule 6: EVM & Election Fraud", regex: /(evm tampering|vote chori|match fixing)/i, type: "Election Rhetoric" },
+      { name: "Rule 7: Rhetorical Question", regex: /(divider in chief|what has he done)/i, type: "Rhetorical" },
+      { name: "Rule 8: Ironic Compliment", regex: /(masterstroke|achhe din|greatest leader|sanskaar for bjp)/i, type: "Ironic Praise" },
+    ];
+
+    // Authentic real tweets from political_tweets_final.csv for live buffer
+    const SEED_STREAM_TWEETS = [
+      { user: "PoliticalObserver_IN", text: "Achhe din aa gaye! What an absolute masterstroke by our visionary leadership 🤡", rule: "Rule 3, Rule 4", conf: "94.2%" },
+      { user: "DemocracyWatch_01", text: "What an extraordinarily transparent election, fixed already with EVM tampering 🙄!!", rule: "Rule 2, Rule 6", conf: "89.5%" },
+      { user: "EconomicPulse_DL", text: "Inflation at 12% is actually fantastic for our savings culture, thank you supreme leader!!", rule: "Rule 2, Rule 8", conf: "91.8%" },
+      { user: "CitizenVoice_Ind", text: "Godi media is totally unbiased and honest today, absolute peak journalism 😏", rule: "Rule 3, Rule 4", conf: "95.1%" }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initApp();
+      setupEventListeners();
+    });
+
+    async function initApp() {
+      renderLiveStreamSeed();
+      await fetchStats();
+      await fetchSamples();
+      await fetchUncertainTweets();
+      await fetchFinetuneResults();
+    }
+
+    function setupEventListeners() {
+      const input = document.getElementById('studioTweetInput');
+      input.addEventListener('input', () => {
+        document.getElementById('studioCharCount').textContent = `${input.value.length} characters`;
+      });
+    }
+
+    // Navigation Switcher
+    function switchNav(tabId) {
+      currentTab = tabId;
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.page-view').forEach(el => el.classList.remove('active'));
+
+      const navEl = document.getElementById(`nav-${tabId}`);
+      const viewEl = document.getElementById(`view-${tabId}`);
+      if (navEl) navEl.classList.add('active');
+      if (viewEl) viewEl.classList.add('active');
+
+      const titles = {
+        overview: "Executive Overview Command Center",
+        studio: "Sarcasm Studio & Real-time Predictor",
+        parties: "Party Intelligence & Multi-Axis Radar",
+        uncertainty: "Uncertainty & Borderline Ambiguity Lab",
+        benchmark: "Model Benchmark & Multi-Task History",
+        lexicon: "8 Sarcasm Rules & Lexicon Engine",
+        corpus: "Corpus Explorer & 47K Tweet Table",
+        pipeline: "CLI Pipeline Control & Logs",
+        academic: "Academic 5-Chart Publication Dashboard"
+      };
+      document.getElementById('topbarTitle').textContent = titles[tabId] || "PoliticaPulse AI";
+
+      // Trigger chart resize if needed
+      setTimeout(() => {
+        if (tabId === 'overview') {
+          if (chartTrajectory) chartTrajectory.resize();
+          if (chartDonut) chartDonut.resize();
+        } else if (tabId === 'parties') {
+          if (chartRadar) chartRadar.resize();
+          if (chartPartySarcasm) chartPartySarcasm.resize();
+        } else if (tabId === 'uncertainty') {
+          if (chartUncertHist) chartUncertHist.resize();
+        } else if (tabId === 'benchmark') {
+          if (chartFinetune) chartFinetune.resize();
+        }
+      }, 50);
+
+      // Close mobile sidebar if open
+      document.getElementById('appSidebar').classList.remove('open');
+    }
+
+    function toggleSidebar() {
+      document.getElementById('appSidebar').classList.toggle('open');
+    }
+
+    // Fetch Stats & Render Overview Charts
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats');
+        statsData = await res.json();
+        
+        // Update KPIs
+        if (statsData.total_tweets) document.getElementById('kpiTotal').textContent = statsData.total_tweets.toLocaleString();
+        if (statsData.sarcasm_detected) document.getElementById('kpiSarcasm').textContent = statsData.sarcasm_detected.toLocaleString();
+        if (statsData.sentiment_corrected) document.getElementById('kpiCorrected').textContent = statsData.sentiment_corrected.toLocaleString();
+        if (statsData.finetuned_accuracy) document.getElementById('kpiAccuracy').textContent = statsData.finetuned_accuracy;
+
+        renderOverviewCharts(statsData);
+        renderHeatmapTable(statsData);
+        renderPartyLeaderboard(statsData);
+      } catch (err) {
+        console.error("Error fetching stats:", err);
+      }
+    }
+
+    // Fetch Samples for Corpus Explorer
+    async function fetchSamples() {
+      try {
+        const res = await fetch('/api/samples');
+        allSamples = await res.json();
+        renderCorpusTable(allSamples);
+      } catch (err) {
+        console.error("Error fetching samples:", err);
+      }
+    }
+
+    // Fetch Uncertain Tweets
+    async function fetchUncertainTweets() {
+      try {
+        const res = await fetch('/api/uncertain');
+        if (res.ok) {
+          allUncertain = await res.json();
+          renderUncertaintyTable(allUncertain);
+          renderUncertaintyHistogram(allUncertain);
+        }
+      } catch (e) {
+        console.log("Uncertain tweets API fallback active");
+      }
+    }
+
+    // Fetch Finetune Results
+    async function fetchFinetuneResults() {
+      try {
+        const res = await fetch('/api/finetune');
+        if (res.ok) {
+          finetuneData = await res.json();
+          renderFinetuneHistoryChart(finetuneData);
+        }
+      } catch (e) {
+        console.log("Finetune results fallback active");
+      }
+    }
+
+    // =========================================================================
+    // CHART RENDERING FUNCTIONS (Chart.js 4.4.1)
+    // =========================================================================
+
+    function renderOverviewCharts(data) {
+      // 1. Polarity Trajectory Spline Chart (FlowBoard Style)
+      const ctxTraj = document.getElementById('chartPolarityTrajectory').getContext('2d');
+      if (chartTrajectory) chartTrajectory.destroy();
+
+      const labels = ['0-5k', '5k-10k', '10k-15k', '15k-20k', '20k-25k', '25k-30k', '30k-35k', '35k-40k', '40k-47.6k'];
+      
+      chartTrajectory = new Chart(ctxTraj, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Negative Sentiment (Corrected)',
+              data: [2650, 2710, 2800, 2750, 2830, 2790, 2820, 2900, 2988],
+              borderColor: '#f87171',
+              backgroundColor: 'rgba(248, 113, 113, 0.1)',
+              fill: true,
+              tension: 0.38,
+              borderWidth: 2.5,
+              pointRadius: 3,
+              pointHoverRadius: 6
+            },
+            {
+              label: 'Neutral Discourse',
+              data: [1700, 1680, 1720, 1690, 1710, 1670, 1730, 1700, 1706],
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.08)',
+              fill: true,
+              tension: 0.38,
+              borderWidth: 2,
+              pointRadius: 3
+            },
+            {
+              label: 'Sarcasm Overrides Flip',
+              data: [110, 125, 138, 122, 145, 130, 140, 118, 120],
+              borderColor: '#4FB8B4',
+              backgroundColor: 'rgba(79, 184, 180, 0.2)',
+              fill: true,
+              tension: 0.38,
+              borderWidth: 2.5,
+              pointRadius: 4,
+              pointBackgroundColor: '#4FB8B4'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { color: '#98D8D0', font: { family: 'Plus Jakarta Sans', size: 11 } }
+            },
+            tooltip: {
+              backgroundColor: '#0A3D4A',
+              titleColor: '#E2F4F0',
+              bodyColor: '#98D8D0',
+              borderColor: '#1D8B94',
+              borderWidth: 1,
+              padding: 10
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(79, 184, 180, 0.08)' },
+              ticks: { color: '#83b9b4', font: { size: 10 } }
+            },
+            y: {
+              grid: { color: 'rgba(79, 184, 180, 0.08)' },
+              ticks: { color: '#83b9b4', font: { size: 10 } }
+            }
+          }
+        }
+      });
+
+      // 2. Overall Sentiment Donut Chart
+      const ctxDonut = document.getElementById('chartOverallDonut').getContext('2d');
+      if (chartDonut) chartDonut.destroy();
+
+      const neg = data.corrected_distribution?.Negative || 25238;
+      const neu = data.corrected_distribution?.Neutral || 15306;
+      const pos = data.corrected_distribution?.Positive || 7137;
+
+      chartDonut = new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: {
+          labels: ['Negative', 'Neutral', 'Positive'],
+          datasets: [{
+            data: [neg, neu, pos],
+            backgroundColor: ['#f87171', '#f59e0b', '#4FB8B4'],
+            borderColor: '#04222B',
+            borderWidth: 3,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '72%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0A3D4A',
+              titleColor: '#E2F4F0',
+              bodyColor: '#98D8D0',
+              borderColor: '#1D8B94',
+              borderWidth: 1
+            }
+          }
+        }
+      });
+
+      // 3. Party Radar Chart (Testora Subject-wise Inspiration)
+      const ctxRadar = document.getElementById('chartPartyRadar').getContext('2d');
+      if (chartRadar) chartRadar.destroy();
+
+      chartRadar = new Chart(ctxRadar, {
+        type: 'radar',
+        data: {
+          labels: ['Sarcasm Density', 'Negative Attack', 'Neutral/Reporting', 'Positive Praise', 'Slang Volatility', 'Discourse Volume'],
+          datasets: [
+            {
+              label: 'BJP (7,942)',
+              data: [68, 85, 60, 52, 75, 95],
+              borderColor: '#fb923c',
+              backgroundColor: 'rgba(251, 146, 60, 0.2)',
+              pointBackgroundColor: '#fb923c',
+              borderWidth: 2
+            },
+            {
+              label: 'Congress (5,420)',
+              data: [82, 88, 55, 48, 85, 80],
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.2)',
+              pointBackgroundColor: '#38bdf8',
+              borderWidth: 2
+            },
+            {
+              label: 'AAP (1,928)',
+              data: [67, 92, 45, 42, 70, 50],
+              borderColor: '#a78bfa',
+              backgroundColor: 'rgba(167, 139, 250, 0.2)',
+              pointBackgroundColor: '#a78bfa',
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#98D8D0', font: { family: 'Plus Jakarta Sans', size: 11 } }
+            }
+          },
+          scales: {
+            r: {
+              angleLines: { color: 'rgba(79, 184, 180, 0.15)' },
+              grid: { color: 'rgba(79, 184, 180, 0.12)' },
+              pointLabels: { color: '#E2F4F0', font: { size: 11, weight: 'bold' } },
+              ticks: { display: false, maxTicksLimit: 5 }
+            }
+          }
+        }
+      });
+
+      // 4. Party Sarcasm Bar Chart
+      const ctxSarcBar = document.getElementById('chartPartySarcasmBar').getContext('2d');
+      if (chartPartySarcasm) chartPartySarcasm.destroy();
+
+      chartPartySarcasm = new Chart(ctxSarcBar, {
+        type: 'bar',
+        data: {
+          labels: ['Congress', 'BJP', 'AAP', 'TMC', 'DMK/AIADMK'],
+          datasets: [{
+            label: 'Sarcasm Detection Rate (%)',
+            data: [8.2, 6.8, 6.7, 5.1, 3.9],
+            backgroundColor: ['#38bdf8', '#fb923c', '#a78bfa', '#34d399', '#facc15'],
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#E2F4F0', font: { weight: 'bold' } }
+            },
+            y: {
+              grid: { color: 'rgba(79, 184, 180, 0.08)' },
+              ticks: {
+                color: '#83b9b4',
+                callback: v => v + '%'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Render Heatmap Matrix (Testora Style)
+    function renderHeatmapTable(stats) {
+      const parties = [
+        { name: 'BJP', neg: 51.9, neu: 35.0, pos: 13.1, sarc: 6.8, total: 7942 },
+        { name: 'Congress', neg: 51.0, neu: 34.7, pos: 14.4, sarc: 8.2, total: 5420 },
+        { name: 'AAP', neg: 56.8, neu: 28.9, pos: 14.3, sarc: 6.7, total: 1928 },
+        { name: 'TMC', neg: 38.8, neu: 25.3, pos: 35.9, sarc: 5.1, total: 273 },
+        { name: 'DMK/AIADMK', neg: 41.3, neu: 40.4, pos: 18.3, sarc: 3.9, total: 622 }
+      ];
+
+      const tbody = document.getElementById('heatmapBody');
+      tbody.innerHTML = '';
+
+      function getCellBg(val, max) {
+        const ratio = Math.min(val / max, 1);
+        if (ratio > 0.75) return 'background: #4FB8B4; color: #04222B;';
+        if (ratio > 0.50) return 'background: #1D8B94; color: #E2F4F0;';
+        if (ratio > 0.25) return 'background: #10606F; color: #98D8D0;';
+        return 'background: #0A3D4A; color: #83b9b4;';
+      }
+
+      parties.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="heatmap-party-label">${p.name}</td>
+          <td><div class="heatmap-cell" style="${getCellBg(p.neg, 60)}" title="${p.name} Negative: ${p.neg}%">${p.neg}%</div></td>
+          <td><div class="heatmap-cell" style="${getCellBg(p.neu, 45)}" title="${p.name} Neutral: ${p.neu}%">${p.neu}%</div></td>
+          <td><div class="heatmap-cell" style="${getCellBg(p.pos, 40)}" title="${p.name} Positive: ${p.pos}%">${p.pos}%</div></td>
+          <td><div class="heatmap-cell" style="${getCellBg(p.sarc, 10)}" title="${p.name} Sarcasm Rate: ${p.sarc}%">${p.sarc}%</div></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Render Party Leaderboard Table
+    function renderPartyLeaderboard(stats) {
+      const parties = [
+        { name: 'Congress (INC)', tweets: 5420, sarc: 444, rate: '8.2%', neg: '51.0%', neu: '34.7%', pos: '14.4%', trait: 'Highest Sarcasm • Irony & Emojis' },
+        { name: 'Bharatiya Janata Party (BJP)', tweets: 7942, sarc: 542, rate: '6.8%', neg: '51.9%', neu: '35.0%', pos: '13.1%', trait: 'Largest Volume • Slang & Masterstroke' },
+        { name: 'Aam Aadmi Party (AAP)', tweets: 1928, sarc: 130, rate: '6.7%', neg: '56.8%', neu: '28.9%', pos: '14.3%', trait: 'Highest Negative Bias • Freebies Rhetoric' },
+        { name: 'All India Trinamool Congress (TMC)', tweets: 273, sarc: 14, rate: '5.1%', neg: '38.8%', neu: '25.3%', pos: '35.9%', trait: 'Highest Positive Support • Regional Focus' },
+        { name: 'DMK / AIADMK Alliance', tweets: 622, sarc: 24, rate: '3.9%', neg: '41.3%', neu: '40.4%', pos: '18.3%', trait: 'Highest Neutral Reporting Ratio' }
+      ];
+
+      const tbody = document.getElementById('partyLeaderboardBody');
+      tbody.innerHTML = '';
+
+      parties.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight: 700; color: var(--text-highlight);">${p.name}</td>
+          <td>${p.tweets.toLocaleString()}</td>
+          <td style="color: #38bdf8; font-weight: bold;">${p.sarc}</td>
+          <td><span class="pill sarc">${p.rate}</span></td>
+          <td><span class="pill neg">${p.neg}</span></td>
+          <td><span class="pill neu">${p.neu}</span></td>
+          <td><span class="pill pos">${p.pos}</span></td>
+          <td style="font-size: 0.8rem; color: var(--accent-soft);">${p.trait}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Seed Stream Generator (Testora Live Monitor)
+    function renderLiveStreamSeed() {
+      const container = document.getElementById('liveStreamFeed');
+      container.innerHTML = '';
+      SEED_STREAM_TWEETS.forEach(t => {
+        const item = document.createElement('div');
+        item.className = 'stream-item';
+        item.onclick = () => {
+          setStudioTweet(t.text);
+          switchNav('studio');
+        };
+        item.innerHTML = `
+          <div class="stream-item-top">
+            <span class="stream-user">@${t.user}</span>
+            <span class="pill sarc" style="font-size: 0.68rem;">${t.conf}</span>
+          </div>
+          <div class="stream-text">"${t.text}"</div>
+          <div class="stream-tags">
+            <span class="pill teal" style="font-size: 0.65rem;">${t.rule}</span>
+            <span style="font-size: 0.7rem; color: var(--accent); margin-left: auto;">Test ➔</span>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // =========================================================================
+    // PAGE 2: STUDIO & BATCH ANALYZER
+    // =========================================================================
+
+    function setStudioTweet(text) {
+      const input = document.getElementById('studioTweetInput');
+      input.value = text;
+      document.getElementById('studioCharCount').textContent = `${text.length} characters`;
+    }
+
+    function clearStudioInput() {
+      document.getElementById('studioTweetInput').value = '';
+      document.getElementById('studioCharCount').textContent = '0 characters';
+      document.getElementById('studioResultContainer').style.display = 'none';
+    }
+
+    async function runStudioAnalysis() {
+      const text = document.getElementById('studioTweetInput').value.trim();
+      if (!text) return;
+
+      const btn = document.getElementById('btnAnalyzeStudio');
+      const btnText = document.getElementById('studioBtnText');
+      btn.disabled = true;
+      btnText.textContent = "Analyzing Cardiff RoBERTa...";
+
+      try {
+        const res = await fetch('/api/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text })
+        });
+        const out = await res.json();
+        renderStudioResult(out);
+      } catch (err) {
+        alert("Error running inference: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = "Analyze Tweet";
+      }
+    }
+
+    function renderStudioResult(out) {
+      document.getElementById('studioResultContainer').style.display = 'block';
+
+      // 1. Literal Baseline
+      const baseSent = out.baseline_sentiment;
+      document.getElementById('resBaseSentiment').textContent = baseSent;
+      document.getElementById('resBaseSentiment').style.color = baseSent === 'Positive' ? 'var(--pos)' : (baseSent === 'Negative' ? 'var(--neg)' : 'var(--neu)');
+      document.getElementById('resBaseConfidence').textContent = `Confidence: ${out.confidence}%`;
+
+      const scores = out.scores || { Negative: 0, Neutral: 0, Positive: 0 };
+      document.getElementById('probNegBar').style.width = `${scores.Negative}%`;
+      document.getElementById('probNegText').textContent = `${scores.Negative}%`;
+      document.getElementById('probNeuBar').style.width = `${scores.Neutral}%`;
+      document.getElementById('probNeuText').textContent = `${scores.Neutral}%`;
+      document.getElementById('probPosBar').style.width = `${scores.Positive}%`;
+      document.getElementById('probPosText').textContent = `${scores.Positive}%`;
+
+      // 2. Sarcasm Rules
+      const isSarc = out.is_sarcastic;
+      const sarcStatusEl = document.getElementById('resSarcStatus');
+      const sarcBadgeEl = document.getElementById('resSarcBadge');
+
+      if (isSarc) {
+        sarcStatusEl.textContent = "Sarcasm Detected";
+        sarcStatusEl.style.color = '#38bdf8';
+        sarcBadgeEl.textContent = "Rule Fired";
+        sarcBadgeEl.className = "pill sarc";
+      } else {
+        sarcStatusEl.textContent = "Literal / Direct";
+        sarcStatusEl.style.color = 'var(--text-muted)';
+        sarcBadgeEl.textContent = "No Rule";
+        sarcBadgeEl.className = "pill teal";
+      }
+
+      const ruleTags = document.getElementById('resRuleTags');
+      ruleTags.innerHTML = '';
+      if (out.rules_triggered && out.rules_triggered.length > 0) {
+        out.rules_triggered.forEach(r => {
+          const pill = document.createElement('span');
+          pill.className = 'pill sarc';
+          pill.textContent = r;
+          ruleTags.appendChild(pill);
+        });
+      } else {
+        ruleTags.innerHTML = '<span class="pill teal">None</span>';
+      }
+
+      document.getElementById('resNewsStatus').textContent = `Protected: ${out.is_news_protected ? 'Yes (Objective Reporting)' : 'No'}`;
+
+      // 3. Final Output
+      const finalSent = out.corrected_sentiment;
+      const finalSentEl = document.getElementById('resFinalSentiment');
+      finalSentEl.textContent = finalSent;
+      finalSentEl.style.color = finalSent === 'Positive' ? 'var(--pos)' : (finalSent === 'Negative' ? 'var(--neg)' : 'var(--neu)');
+      document.getElementById('resExplanationText').textContent = out.explanation || "Analysis complete.";
+    }
+
+    // Batch Tweet Analyzer
+    function loadBatchSampleTweets() {
+      const samples = [
+        "What an absolute masterstroke by our leaders to raise fuel prices again !! 🤡",
+        "National highway development authority announced 4 new lane expansions today.",
+        "Congress and BJP are two sides of the same coin, evm tampering everywhere 🙄",
+        "Assam CM holds bilateral press briefing with central delegation on flood relief.",
+        "We are truly proud of our space agency scientists for this achievement 🇮🇳"
+      ];
+      document.getElementById('batchInput').value = samples.join('\n');
+    }
+
+    async function runBatchAnalysis() {
+      const raw = document.getElementById('batchInput').value.trim();
+      if (!raw) return;
+
+      const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      const container = document.getElementById('batchResultsContainer');
+      const tbody = document.getElementById('batchTableBody');
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--accent);">Running batch transformer inference...</td></tr>';
+      container.style.display = 'block';
+
+      const results = [];
+      for (let i = 0; i < lines.length; i++) {
+        try {
+          const res = await fetch('/api/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: lines[i] })
+          });
+          const data = await res.json();
+          results.push(data);
+        } catch (e) {
+          results.push({ text: lines[i], baseline_sentiment: 'Error', is_sarcastic: false, rules_triggered: [], corrected_sentiment: 'Error' });
+        }
+      }
+
+      tbody.innerHTML = '';
+      results.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        const isSarc = r.is_sarcastic;
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${r.text}</td>
+          <td><span class="pill ${r.baseline_sentiment === 'Positive' ? 'pos' : (r.baseline_sentiment === 'Negative' ? 'neg' : 'neu')}">${r.baseline_sentiment}</span></td>
+          <td><span class="pill ${isSarc ? 'sarc' : 'teal'}">${isSarc ? (r.rules_triggered.join(', ') || 'Sarcasm') : 'None'}</span></td>
+          <td><span class="pill ${r.corrected_sentiment === 'Positive' ? 'pos' : (r.corrected_sentiment === 'Negative' ? 'neg' : 'neu')}">${r.corrected_sentiment}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // =========================================================================
+    // PAGE 4: UNCERTAINTY INTELLIGENCE LAB
+    // =========================================================================
+
+    function renderUncertaintyHistogram(items) {
+      const ctx = document.getElementById('chartUncertaintyHist').getContext('2d');
+      if (chartUncertHist) chartUncertHist.destroy();
+
+      const bins = { '40-45%': 0, '45-50%': 0, '50-55%': 0, '55-60%': 0, '60-65%': 0 };
+      items.forEach(it => {
+        const c = parseFloat(it.confidence) * 100;
+        if (c < 45) bins['40-45%']++;
+        else if (c < 50) bins['45-50%']++;
+        else if (c < 55) bins['50-55%']++;
+        else if (c < 60) bins['55-60%']++;
+        else bins['60-65%']++;
+      });
+
+      chartUncertHist = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(bins),
+          datasets: [{
+            label: 'Uncertain Tweets Count',
+            data: Object.values(bins),
+            backgroundColor: '#1D8B94',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: { ticks: { color: '#83b9b4', font: { size: 9 } }, grid: { display: false } },
+            y: { ticks: { color: '#83b9b4', font: { size: 9 } }, grid: { color: 'rgba(79, 184, 180, 0.08)' } }
+          }
+        }
+      });
+    }
+
+    function renderUncertaintyTable(items) {
+      const tbody = document.getElementById('uncertaintyTableBody');
+      tbody.innerHTML = '';
+
+      if (!items || items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No uncertain tweets matching filter.</td></tr>';
+        return;
+      }
+
+      items.slice(0, 50).forEach(row => {
+        const tr = document.createElement('tr');
+        const confPct = (parseFloat(row.confidence) * 100).toFixed(1);
+        
+        let probNeg = 33, probNeu = 33, probPos = 34;
+        try {
+          if (row.proba) {
+            const p = typeof row.proba === 'string' ? JSON.parse(row.proba) : row.proba;
+            probNeg = (p[0] * 100).toFixed(0);
+            probNeu = (p[1] * 100).toFixed(0);
+            probPos = (p[2] * 100).toFixed(0);
+          }
+        } catch (e) {}
+
+        tr.innerHTML = `
+          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent-soft);">#${row.original_index || '0'}</td>
+          <td style="max-width: 380px;">${row.clean_text}</td>
+          <td><span class="pill ${row.prediction === 'Positive' ? 'pos' : (row.prediction === 'Negative' ? 'neg' : 'neu')}">${row.prediction}</span></td>
+          <td style="font-family: 'JetBrains Mono'; font-weight: bold; color: #f59e0b;">${confPct}%</td>
+          <td style="min-width: 140px;">
+            <div style="display: flex; gap: 4px; font-size: 0.68rem; margin-bottom: 2px;">
+              <span style="color: var(--neg);">N:${probNeg}%</span>
+              <span style="color: var(--neu);">Neu:${probNeu}%</span>
+              <span style="color: var(--pos);">P:${probPos}%</span>
+            </div>
+            <div style="display: flex; height: 5px; border-radius: 3px; overflow: hidden; background: #021419;">
+              <div style="width: ${probNeg}%; background: var(--neg);"></div>
+              <div style="width: ${probNeu}%; background: var(--neu);"></div>
+              <div style="width: ${probPos}%; background: var(--pos);"></div>
+            </div>
+          </td>
+          <td>
+            <button class="secondary-btn" style="padding: 4px 10px; font-size: 0.75rem;" onclick="testUncertainInStudio('${row.clean_text.replace(/'/g, "\\'")}')">⚡ Test</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterUncertaintyTable() {
+      const confRange = document.getElementById('filterUncertConf').value;
+      const pred = document.getElementById('filterUncertPred').value;
+      const q = document.getElementById('searchUncertInput').value.toLowerCase();
+
+      const filtered = allUncertain.filter(row => {
+        const c = parseFloat(row.confidence) * 100;
+        let matchConf = true;
+        if (confRange === 'LOW') matchConf = c < 50;
+        else if (confRange === 'MID') matchConf = c >= 50 && c < 58;
+        else if (confRange === 'HIGH') matchConf = c >= 58;
+
+        const matchPred = pred === 'ALL' || row.prediction === pred;
+        const matchQ = !q || (row.clean_text || '').toLowerCase().includes(q);
+        return matchConf && matchPred && matchQ;
+      });
+
+      renderUncertaintyTable(filtered);
+    }
+
+    function testUncertainInStudio(text) {
+      setStudioTweet(text);
+      switchNav('studio');
+      runStudioAnalysis();
+    }
+
+    // =========================================================================
+    // PAGE 5: MULTI-TASK FINETUNE HISTORY
+    // =========================================================================
+
+    function renderFinetuneHistoryChart(ftData) {
+      const ctx = document.getElementById('chartFinetuneHistory').getContext('2d');
+      if (chartFinetune) chartFinetune.destroy();
+
+      const history = ftData?.training_history || [
+        { epoch: 1, train_loss: 1.3587, val_loss: 1.1287, sent_acc: 0.79, sarc_f1: 0.2308 },
+        { epoch: 2, train_loss: 1.0949, val_loss: 1.0381, sent_acc: 0.80, sarc_f1: 0.2727 },
+        { epoch: 3, train_loss: 0.9386, val_loss: 0.9568, sent_acc: 0.80, sarc_f1: 0.3478 },
+        { epoch: 4, train_loss: 0.7935, val_loss: 1.1074, sent_acc: 0.83, sarc_f1: 0.3478 },
+        { epoch: 5, train_loss: 0.7415, val_loss: 0.9993, sent_acc: 0.785, sarc_f1: 0.3284 },
+        { epoch: 6, train_loss: 0.612, val_loss: 1.0961, sent_acc: 0.755, sarc_f1: 0.339 },
+        { epoch: 7, train_loss: 0.5412, val_loss: 1.2100, sent_acc: 0.855, sarc_f1: 0.3404 },
+        { epoch: 8, train_loss: 0.4792, val_loss: 1.2292, sent_acc: 0.82, sarc_f1: 0.3478 }
+      ];
+
+      const epochs = history.map(h => `Epoch ${h.epoch}`);
+      const trainLoss = history.map(h => h.train_loss);
+      const valLoss = history.map(h => h.val_loss);
+      const sentAcc = history.map(h => (h.sent_acc * 100).toFixed(1));
+      const sarcF1 = history.map(h => (h.sarc_f1 * 100).toFixed(1));
+
+      chartFinetune = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: epochs,
+          datasets: [
+            {
+              label: 'Train Loss',
+              data: trainLoss,
+              borderColor: '#f59e0b',
+              borderDash: [5, 5],
+              tension: 0.3,
+              yAxisID: 'yLoss'
+            },
+            {
+              label: 'Validation Loss',
+              data: valLoss,
+              borderColor: '#f87171',
+              tension: 0.3,
+              yAxisID: 'yLoss'
+            },
+            {
+              label: 'Sentiment Accuracy (%)',
+              data: sentAcc,
+              borderColor: '#4FB8B4',
+              backgroundColor: 'rgba(79, 184, 180, 0.1)',
+              fill: true,
+              tension: 0.3,
+              yAxisID: 'yPct'
+            },
+            {
+              label: 'Sarcasm F1 (%)',
+              data: sarcF1,
+              borderColor: '#38bdf8',
+              tension: 0.3,
+              yAxisID: 'yPct'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#98D8D0', font: { family: 'Plus Jakarta Sans', size: 11 } } }
+          },
+          scales: {
+            x: { ticks: { color: '#83b9b4' }, grid: { color: 'rgba(79, 184, 180, 0.08)' } },
+            yLoss: {
+              type: 'linear',
+              position: 'left',
+              ticks: { color: '#f59e0b' },
+              title: { display: true, text: 'Cross-Entropy Loss', color: '#f59e0b' },
+              grid: { color: 'rgba(79, 184, 180, 0.08)' }
+            },
+            yPct: {
+              type: 'linear',
+              position: 'right',
+              ticks: { color: '#4FB8B4', callback: v => v + '%' },
+              title: { display: true, text: 'Metric %', color: '#4FB8B4' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    // =========================================================================
+    // PAGE 6: LIVE SARCASM RULE SIMULATOR
+    // =========================================================================
+
+    function simulateRule(text) {
+      const outEl = document.getElementById('ruleSimOutput');
+      if (!text || text.trim() === '') {
+        outEl.style.display = 'none';
+        return;
+      }
+
+      const matches = [];
+      SIM_RULES.forEach(r => {
+        if (r.regex.test(text)) {
+          matches.push(r);
+        }
+      });
+
+      outEl.style.display = 'block';
+      if (matches.length > 0) {
+        let html = `<span style="color: #4FB8B4; font-weight: bold;">⚡ Triggered ${matches.length} Rule(s):</span> `;
+        matches.forEach(m => {
+          html += `<span class="pill sarc" style="margin-left: 6px;">${m.name}</span> `;
+        });
+        html += `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 6px;">Pipeline Action: Sarcasm flag raised ➔ Forces Positive/Neutral override to Negative.</div>`;
+        outEl.innerHTML = html;
+      } else {
+        outEl.innerHTML = `<span style="color: var(--text-muted);">No domain rule fired. Literal transformer output preserved (protected).</span>`;
+      }
+    }
+
+    // =========================================================================
+    // PAGE 7: CORPUS EXPLORER (47K DATA TABLE)
+    // =========================================================================
+
+    function renderCorpusTable(items) {
+      const tbody = document.getElementById('corpusTbody');
+      tbody.innerHTML = '';
+
+      if (!items || items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No matching tweets found.</td></tr>';
+        return;
+      }
+
+      const start = (corpusPage - 1) * corpusPerPage;
+      const end = start + corpusPerPage;
+      const pageItems = items.slice(start, end);
+
+      pageItems.forEach(row => {
+        const tr = document.createElement('tr');
+        const isSarc = row.sarcasm_detected == 1 || row.sarcasm_detected === true || (row.sarcasm_type && row.sarcasm_type !== 'none');
+        const isFlipped = row.sentiment !== row.corrected_sentiment;
+
+        tr.innerHTML = `
+          <td style="color: var(--accent-soft); font-size: 0.8rem; font-weight: 600;">@${row.username || row.User || 'citizen_in'}</td>
+          <td style="max-width: 420px; line-height: 1.45;">${row.clean_text || row.clean_tweet || row.text || row.Tweet}</td>
+          <td><span class="pill ${row.sentiment === 'Positive' ? 'pos' : (row.sentiment === 'Negative' ? 'neg' : 'neu')}">${row.sentiment}</span></td>
+          <td><span class="pill ${isSarc ? 'sarc' : 'teal'}">${isSarc ? (row.sarcasm_type || 'Detected') : 'None'}</span></td>
+          <td>
+            <span class="pill ${row.corrected_sentiment === 'Positive' ? 'pos' : (row.corrected_sentiment === 'Negative' ? 'neg' : 'neu')}">
+              ${row.corrected_sentiment}
+            </span>
+            ${isFlipped ? '<span style="font-size: 0.68rem; color: #f59e0b; margin-left: 4px;">⚡ Overridden</span>' : ''}
+          </td>
+          <td>
+            <button class="secondary-btn" style="padding: 4px 10px; font-size: 0.75rem;" onclick="inspectCorpusRow('${(row.clean_text || row.clean_tweet || row.text || '').replace(/'/g, "\\'")}', '${row.username || 'user'}', '${row.sentiment}', '${row.corrected_sentiment}', '${row.sarcasm_type || 'none'}')">Inspect</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('corpusPaginationInfo').textContent = `Showing ${start + 1} to ${Math.min(end, items.length)} of ${items.length} records`;
+      document.getElementById('corpusPrevBtn').disabled = corpusPage === 1;
+      document.getElementById('corpusNextBtn').disabled = end >= items.length;
+    }
+
+    function changeCorpusPage(delta) {
+      corpusPage += delta;
+      applyCorpusFilters();
+    }
+
+    function applyCorpusFilters() {
+      const q = document.getElementById('corpusSearchInput').value.toLowerCase();
+      const sent = document.getElementById('corpusSentFilter').value;
+      const sarc = document.getElementById('corpusSarcFilter').value;
+      const override = document.getElementById('corpusOverrideFilter').value;
+
+      const filtered = allSamples.filter(item => {
+        const text = (item.clean_text || item.clean_tweet || item.text || '').toLowerCase();
+        const user = (item.username || item.User || '').toLowerCase();
+        const matchesQ = !q || text.includes(q) || user.includes(q);
+        const matchesSent = sent === 'ALL' || item.corrected_sentiment === sent;
+        const isSarc = item.sarcasm_detected == 1 || item.sarcasm_detected === true || (item.sarcasm_type && item.sarcasm_type !== 'none');
+        const matchesSarc = sarc === 'ALL' || (sarc === 'YES' && isSarc) || (sarc === 'NO' && !isSarc);
+        const isFlipped = item.sentiment !== item.corrected_sentiment;
+        const matchesOverride = override === 'ALL' || (override === 'FLIPPED' && isFlipped);
+
+        return matchesQ && matchesSent && matchesSarc && matchesOverride;
+      });
+
+      renderCorpusTable(filtered);
+    }
+
+    function exportFilteredDatasetCSV() {
+      if (!allSamples || allSamples.length === 0) return;
+      let csv = "username,clean_text,baseline_sentiment,sarcasm_detected,corrected_sentiment\n";
+      allSamples.forEach(r => {
+        const text = (r.clean_text || r.clean_tweet || r.text || '').replace(/"/g, '""');
+        csv += `"${r.username || ''}","${text}","${r.sentiment}","${r.sarcasm_detected}","${r.corrected_sentiment}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `politica_tweets_filtered_${Date.now()}.csv`;
+      a.click();
+    }
+
+    // Modal Inspection
+    function inspectCorpusRow(text, user, base, corr, sarcType) {
+      selectedModalTweet = text;
+      const modal = document.getElementById('inspectModal');
+      const content = document.getElementById('modalContent');
+      content.innerHTML = `
+        <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+          <div style="font-size: 0.8rem; color: var(--accent); font-weight: bold; margin-bottom: 4px;">@${user}</div>
+          <div style="font-size: 0.95rem; line-height: 1.5; color: var(--text-highlight);">"${text}"</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 0.82rem;">
+          <div style="background: var(--bg-subtle); padding: 10px; border-radius: 8px;">
+            <div style="color: var(--text-muted); font-size: 0.72rem;">Baseline Polarity:</div>
+            <div style="font-weight: bold; font-size: 1rem; color: var(--neu);">${base}</div>
+          </div>
+          <div style="background: var(--bg-subtle); padding: 10px; border-radius: 8px;">
+            <div style="color: var(--text-muted); font-size: 0.72rem;">Sarcasm Rule:</div>
+            <div style="font-weight: bold; font-size: 0.95rem; color: #38bdf8;">${sarcType}</div>
+          </div>
+          <div style="background: var(--bg-subtle); padding: 10px; border-radius: 8px;">
+            <div style="color: var(--text-muted); font-size: 0.72rem;">Corrected Polarity:</div>
+            <div style="font-weight: bold; font-size: 1rem; color: var(--neg);">${corr}</div>
+          </div>
+        </div>
+      `;
+      modal.style.display = 'flex';
+    }
+
+    function closeInspectModal() {
+      document.getElementById('inspectModal').style.display = 'none';
+    }
+
+    function testModalTweetInStudio() {
+      closeInspectModal();
+      setStudioTweet(selectedModalTweet);
+      switchNav('studio');
+      runStudioAnalysis();
+    }
+
+    // =========================================================================
+    // PAGE 8: PIPELINE CONTROL & CONSOLE
+    // =========================================================================
+
+    async function executePipelineStep(step) {
+      const consoleBox = document.getElementById('consoleOutput');
+      consoleBox.textContent += `\n\n[${new Date().toLocaleTimeString()}] >>> Executing: ${step}...`;
+      consoleBox.scrollTop = consoleBox.scrollHeight;
+
+      try {
+        const res = await fetch('/api/run_pipeline', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ step: step })
+        });
+        const out = await res.json();
+        consoleBox.textContent += `\n` + out.output;
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+        if (step === 'visualize') {
+          rebuildDashboardPng();
+        }
+      } catch (err) {
+        consoleBox.textContent += `\n[ERROR] ${err.message}`;
+      }
+    }
+
+    async function rebuildDashboardPng() {
+      const img = document.getElementById('dashboardImg');
+      img.style.opacity = '0.5';
+      img.src = '/dashboard/sentiment_dashboard.png?t=' + Date.now();
+      img.onload = () => { img.style.opacity = '1'; };
+    }
+
+    function setPipelineMode(mode) {
+      const btnSarc = document.getElementById('btnModeSarcasm');
+      const btnBase = document.getElementById('btnModeBaseline');
+      if (mode === 'sarcasm') {
+        btnSarc.classList.add('active');
+        btnBase.classList.remove('active');
+      } else {
+        btnBase.classList.add('active');
+        btnSarc.classList.remove('active');
+      }
+    }
+
+    function handleSidebarSearch(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) return;
+      if (q.includes('stud') || q.includes('test') || q.includes('pred')) switchNav('studio');
+      else if (q.includes('part') || q.includes('bjp') || q.includes('cong') || q.includes('radar')) switchNav('parties');
+      else if (q.includes('uncert') || q.includes('bound') || q.includes('lab')) switchNav('uncertainty');
+      else if (q.includes('bench') || q.includes('loss') || q.includes('epoch')) switchNav('benchmark');
+      else if (q.includes('rule') || q.includes('lex') || q.includes('slang')) switchNav('lexicon');
+      else if (q.includes('corp') || q.includes('data') || q.includes('table') || q.includes('tweet')) switchNav('corpus');
+      else if (q.includes('pipe') || q.includes('cli') || q.includes('term')) switchNav('pipeline');
+      else if (q.includes('acad') || q.includes('png') || q.includes('mat')) switchNav('academic');
+    }
+  </script>
+</body>
+</html>

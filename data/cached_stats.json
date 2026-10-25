@@ -1,0 +1,64 @@
+{
+  "total_tweets": 47681,
+  "sarcasm_detected": 3076,
+  "sentiment_corrected": 1148,
+  "baseline_accuracy": "53.5%",
+  "finetuned_accuracy": "56.6%",
+  "sentiment_distribution": {
+    "Negative": 24090,
+    "Neutral": 16034,
+    "Positive": 7557
+  },
+  "corrected_distribution": {
+    "Negative": 25238,
+    "Neutral": 15306,
+    "Positive": 7137
+  },
+  "transitions": {
+    "Neutral_to_Negative": 728,
+    "Positive_to_Negative": 420,
+    "Negative_confirmed": 24090
+  },
+  "parties": {
+    "BJP": {
+      "count": 7942,
+      "sarcastic": 542,
+      "sarcasm_rate": 6.8,
+      "neg_pct": 51.9,
+      "neu_pct": 35.0,
+      "pos_pct": 13.1
+    },
+    "Congress": {
+      "count": 5420,
+      "sarcastic": 444,
+      "sarcasm_rate": 8.2,
+      "neg_pct": 51.0,
+      "neu_pct": 34.7,
+      "pos_pct": 14.4
+    },
+    "AAP": {
+      "count": 1928,
+      "sarcastic": 130,
+      "sarcasm_rate": 6.7,
+      "neg_pct": 56.8,
+      "neu_pct": 28.9,
+      "pos_pct": 14.3
+    },
+    "TMC": {
+      "count": 273,
+      "sarcastic": 14,
+      "sarcasm_rate": 5.1,
+      "neg_pct": 38.8,
+      "neu_pct": 25.3,
+      "pos_pct": 35.9
+    },
+    "DMK/AIADMK": {
+      "count": 622,
+      "sarcastic": 24,
+      "sarcasm_rate": 3.9,
+      "neg_pct": 41.3,
+      "neu_pct": 40.4,
+      "pos_pct": 18.3
+    }
+  }
+}
