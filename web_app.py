@@ -54,7 +54,7 @@ _MODEL_LOADING = False
 _MODEL_READY = False
 
 def get_model():
-    """Lazy-load the Cardiff RoBERTa model in memory with safe error handling."""
+    """Lazy-load the Cardiff RoBERTa model in memory with INT8 quantization & thread tuning."""
     global _TOKENIZER, _MODEL, _MODEL_READY, _MODEL_LOADING
     with _MODEL_LOCK:
         if _MODEL_READY and _MODEL is not None:
@@ -63,14 +63,22 @@ def get_model():
             return None, None
         _MODEL_LOADING = True
         try:
+            import torch
+            torch.set_num_threads(1)
             from transformers import AutoTokenizer, AutoModelForSequenceClassification
             model_name = "cardiffnlp/twitter-roberta-base-sentiment-latest"
             print("[Model] Loading Cardiff RoBERTa model into memory...")
             _TOKENIZER = AutoTokenizer.from_pretrained(model_name)
-            _MODEL = AutoModelForSequenceClassification.from_pretrained(model_name)
-            _MODEL.eval()
+            raw_model = AutoModelForSequenceClassification.from_pretrained(model_name)
+            raw_model.eval()
+            try:
+                # Dynamic quantization to INT8 (reduces RAM from 500MB to ~150MB and speeds up CPU inference)
+                _MODEL = torch.quantization.quantize_dynamic(raw_model, {torch.nn.Linear}, dtype=torch.qint8)
+                print("[Model] ⚡ INT8 dynamic quantization active.")
+            except Exception:
+                _MODEL = raw_model
             _MODEL_READY = True
-            print("[Model] ✅ Cardiff RoBERTa model ready for inference.")
+            print("[Model] ✅ Cardiff RoBERTa model ready for accelerated inference.")
             return _TOKENIZER, _MODEL
         except Exception as e:
             print(f"[Model] ⚠️ RoBERTa load deferred ({e}). Fallback inference engine active.")
@@ -79,9 +87,30 @@ def get_model():
         finally:
             _MODEL_LOADING = False
 
-# Background thread to prewarm the model
+# Background thread to prewarm the model and preset tweet cache
 def prewarm_model():
-    t = threading.Thread(target=get_model, daemon=True)
+    def _worker():
+        get_model()
+        presets = [
+            "Achhe din aa gaye! What an absolute masterstroke by our great leaders.",
+            "Media wanted to hear Modi G is great leader 🤡",
+            "What a fair election, fixed already with EVM tampering 🙄",
+            "Assam Pradesh Congress Committee expressed disappointment over seat allotment.",
+            "We are extremely proud of Indian scientists for successfully launching this satellite!",
+            "Inflation at 12% is actually great for savings, masterstroke economics!!",
+            "What an absolute masterstroke by our leaders to raise fuel prices again !! 🤡",
+            "National highway development authority announced 4 new lane expansions today.",
+            "Congress and BJP are two sides of the same coin, evm tampering everywhere 🙄",
+            "Assam CM holds bilateral press briefing with central delegation on flood relief."
+        ]
+        for p in presets:
+            try:
+                analyze_tweet(p)
+            except Exception:
+                pass
+        print(f"[Model] ⚡ Pre-warmed {len(presets)} interactive preset tweets into cache.")
+
+    t = threading.Thread(target=_worker, daemon=True)
     t.start()
 
 _CACHED_STATS = None
@@ -237,8 +266,16 @@ def fallback_sentiment_predict(text: str):
     return base_sent, conf, scores
 
 
+_PREDICTION_CACHE = {}
+_CACHE_LOCK = threading.Lock()
+
 def analyze_tweet(text: str):
     """Run baseline RoBERTa inference (or fast fallback) + sarcasm rules + sentiment correction."""
+    cleaned_key = str(text).strip()
+    with _CACHE_LOCK:
+        if cleaned_key in _PREDICTION_CACHE:
+            return _PREDICTION_CACHE[cleaned_key]
+
     from scipy.special import softmax
 
     baseline_sentiment = None
@@ -282,7 +319,7 @@ def analyze_tweet(text: str):
     elif is_news:
         explanation = "Detected objective news/reporting language; protected from sarcasm overrides."
 
-    return {
+    result = {
         "text": text,
         "baseline_sentiment": baseline_sentiment,
         "confidence": round(confidence * 100, 1),
@@ -293,6 +330,89 @@ def analyze_tweet(text: str):
         "corrected_sentiment": corrected_sentiment,
         "explanation": explanation
     }
+
+    with _CACHE_LOCK:
+        if len(_PREDICTION_CACHE) > 500:
+            _PREDICTION_CACHE.clear()
+        _PREDICTION_CACHE[cleaned_key] = result
+
+    return result
+
+
+def analyze_batch_tweets(texts: list):
+    """Fast batched vector inference for multiple tweets."""
+    results = []
+    uncached_indices = []
+    uncached_texts = []
+
+    for idx, t in enumerate(texts[:20]):
+        key = str(t).strip()
+        with _CACHE_LOCK:
+            if key in _PREDICTION_CACHE:
+                results.append((idx, _PREDICTION_CACHE[key]))
+                continue
+        uncached_indices.append(idx)
+        uncached_texts.append(key)
+
+    if uncached_texts:
+        # Check if RoBERTa model is available for true batched forward pass
+        tokenizer, model = get_model()
+        if tokenizer is not None and model is not None:
+            try:
+                from scipy.special import softmax
+                import torch
+                with torch.no_grad():
+                    inputs = tokenizer(uncached_texts, return_tensors="pt", padding=True, truncation=True, max_length=128)
+                    outputs = model(**inputs)
+                    all_probs = softmax(outputs.logits.detach().cpu().numpy(), axis=1)
+
+                labels = ["Negative", "Neutral", "Positive"]
+                for i, (orig_idx, txt) in enumerate(zip(uncached_indices, uncached_texts)):
+                    probs = all_probs[i]
+                    best_idx = int(np.argmax(probs))
+                    base_sent = labels[best_idx]
+                    conf = float(probs[best_idx])
+                    scores = {labels[j]: float(probs[j]) for j in range(3)}
+
+                    is_sarc, rules_triggered = detect_sarcasm(txt)
+                    is_news = is_news_reporting(txt)
+                    corr_sent = correct_sentiment(base_sent, is_sarc)
+
+                    explanation = "Sentiment remains unchanged."
+                    if is_sarc:
+                        if base_sent in ("Positive", "Neutral"):
+                            explanation = f"Detected political sarcasm ({rules_triggered}). Overriding literal '{base_sent}' to Negative."
+                        else:
+                            explanation = f"Detected political sarcasm ({rules_triggered}). Negative sentiment confirmed."
+                    elif is_news:
+                        explanation = "Detected objective news/reporting language; protected from sarcasm overrides."
+
+                    res = {
+                        "text": txt,
+                        "baseline_sentiment": base_sent,
+                        "confidence": round(conf * 100, 1),
+                        "scores": {k: round(v * 100, 1) for k, v in scores.items()},
+                        "is_sarcastic": is_sarc,
+                        "rules_triggered": rules_triggered.split(",") if rules_triggered != "none" else [],
+                        "is_news_protected": is_news,
+                        "corrected_sentiment": corr_sent,
+                        "explanation": explanation
+                    }
+                    with _CACHE_LOCK:
+                        _PREDICTION_CACHE[txt] = res
+                    results.append((orig_idx, res))
+            except Exception as e:
+                print(f"[Batch] Batched inference fallback: {e}")
+                for orig_idx, txt in zip(uncached_indices, uncached_texts):
+                    res = analyze_tweet(txt)
+                    results.append((orig_idx, res))
+        else:
+            for orig_idx, txt in zip(uncached_indices, uncached_texts):
+                res = analyze_tweet(txt)
+                results.append((orig_idx, res))
+
+    results.sort(key=lambda x: x[0])
+    return [r[1] for r in results]
 
 
 HTML_CONTENT = """<!DOCTYPE html>
@@ -2350,9 +2470,7 @@ class WebAppHandler(BaseHTTPRequestHandler):
         elif path == "/api/batch_predict":
             try:
                 texts = data.get("texts", [])
-                results = []
-                for t in texts[:20]:
-                    results.append(analyze_tweet(str(t)))
+                results = analyze_batch_tweets(texts)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")
